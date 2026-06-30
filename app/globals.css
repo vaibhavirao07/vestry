@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Explicit source paths — needed because globals.css sits inside app/
+   and Tailwind v4 auto-detection doesn't walk up to siblings like components/ */
+@source "../app";
+@source "../components";
+@source "../hooks";
+
 @theme inline {
   --color-surface: #FAFAF8;
   --color-accent:  #7C5CBF;

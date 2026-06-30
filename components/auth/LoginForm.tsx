@@ -16,18 +16,17 @@ export function LoginForm() {
     setError(null)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    console.log('[LoginForm] calling signInWithPassword for:', email)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    console.log('[LoginForm] result — data:', data, '| error:', error)
 
     if (error) {
-      console.error('[LoginForm] signInWithPassword error:', error)
       setError(error.message)
       setIsLoading(false)
       return
     }
 
-    // Hard redirect so the browser sends fresh session cookies on the next
-    // request — avoids a race where router.push fires before Next.js has
-    // invalidated its server-component cache and the proxy bounces us back.
+    console.log('[LoginForm] success — redirecting to /closet')
     window.location.href = '/closet'
   }
 
