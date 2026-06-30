@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ClosetView } from '@/components/closet/ClosetView'
 
@@ -6,9 +5,9 @@ export const metadata = { title: 'Closet — Vestry' }
 
 export default async function ClosetPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/auth/login')
+  // TEMPORARY — DO NOT SHIP: skip auth redirect; queries return empty without a session.
+  // Re-enable by restoring: const { data: { user } } = await supabase.auth.getUser()
+  //                         if (!user) redirect('/auth/login')
 
   const [{ data: items }, { data: categories }] = await Promise.all([
     supabase.from('item_stats').select('*'),
