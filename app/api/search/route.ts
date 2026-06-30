@@ -16,36 +16,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] })
   }
 
-  const apiKey = process.env.BRAVE_API_KEY
+  const apiKey = process.env.SERPER_API_KEY
   if (!apiKey) {
     return NextResponse.json({ results: [] })
   }
 
   try {
-    const res = await fetch(
-      `https://api.search.brave.com/res/v1/shopping/search?q=${encodeURIComponent(q)}&count=8`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'Accept-Encoding': 'gzip',
-          'X-Subscription-Token': apiKey,
-        },
-        next: { revalidate: 60 },
+    const res = await fetch('https://google.serper.dev/shopping', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey,
       },
-    )
+      body: JSON.stringify({ q, num: 8 }),
+      next: { revalidate: 60 },
+    })
 
     if (!res.ok) return NextResponse.json({ results: [] })
 
     const data = await res.json()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results: SearchResult[] = (data.results ?? []).slice(0, 8).map((r: any) => ({
-      name: r.title ?? r.name ?? '',
-      brand: r.merchant_name ?? r.brand ?? null,
-      image_url: r.thumbnail?.src ?? r.thumbnail?.url ?? null,
-      source_url: r.url ?? r.product_url ?? '',
-      price: r.price?.value != null ? parseFloat(r.price.value) : null,
-    }))
+    const results: SearchResult[] = (data.shoppingResults ?? []).slice(0, 8).map((r: any) => {
+      // Serper returns price as a string e.g. "$89.99" or "From $49.99"
+      const priceMatch = String(r.price ?? '').match(/[\d]+\.?\d*/)
+      const price = priceMatch ? parseFloat(priceMatch[0]) : null
+
+      return {
+        name: r.title ?? '',
+        brand: r.source ?? null,   // merchant/retailer name
+        image_url: r.imageUrl ?? null,
+        source_url: r.link ?? '',
+        price,
+      }
+    })
 
     return NextResponse.json({ results })
   } catch {
