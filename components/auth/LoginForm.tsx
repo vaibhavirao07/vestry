@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,9 +9,8 @@ export function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
@@ -21,13 +19,16 @@ export function LoginForm() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
+      console.error('[LoginForm] signInWithPassword error:', error)
       setError(error.message)
       setIsLoading(false)
       return
     }
 
-    router.push('/closet')
-    router.refresh()
+    // Hard redirect so the browser sends fresh session cookies on the next
+    // request — avoids a race where router.push fires before Next.js has
+    // invalidated its server-component cache and the proxy bounces us back.
+    window.location.href = '/closet'
   }
 
   return (
