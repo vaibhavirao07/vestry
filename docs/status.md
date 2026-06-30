@@ -1,22 +1,27 @@
 # Vestry — Status
 
 ## Current milestone
-Phase 1 — schema written, awaiting Supabase run.
+Phase 1 — Closet inventory complete. Needs auth screens before the app is usable end-to-end.
 
 ## What's done
-- Reviewed SPEC.md and CLAUDE.md
-- Answered 8 open design questions (wear logging, occasions, gap analysis, etc.)
-- Created branch `feature/supabase-schema`
-- Wrote `supabase/migrations/001_initial_schema.sql`:
-  - 6 tables: categories, items, outfits, outfit_items, wear_logs, trends
-  - RLS enabled on all tables with per-user policies
-  - Trigger: seeds 7 default categories on new user signup
-  - 3 views: item_stats, outfit_stats, gap_analysis
-  - 15 SS25 trend seeds
+- Supabase schema (6 tables, RLS, trigger, 3 views, trend seeds) ✓
+- `lib/supabase/client.ts` + `server.ts` — typed Supabase clients ✓
+- `types/database.ts` — full Database generic with Relationships fields ✓
+- `proxy.ts` — Next.js 16 auth gate ✓
+- `app/(main)/layout.tsx` + `BottomNav` — 4-tab shell ✓
+- `app/(main)/closet/page.tsx` — server-side data fetch from `item_stats` view ✓
+- `ClosetView` — 2-col grid, category filter, FAB, optimistic item add ✓
+- `AddItemDrawer` — 2-step flow: Brave Search → auto-fill form → save ✓
+- `ItemCard` — image, name, brand, cost-per-wear display ✓
+- `hooks/useAddItem` — Supabase insert with optimistic update ✓
+- `app/api/search/route.ts` — Brave Search proxy ✓
+
+## Blocked on
+Auth screens (`/auth/login`, `/auth/signup`) — proxy.ts redirects unauthenticated users there but the pages don't exist yet
 
 ## Next steps
-1. Run `supabase/migrations/001_initial_schema.sql` in the Supabase SQL Editor
-2. Create `item-images` storage bucket in Supabase dashboard (public read)
-3. Add `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. Scaffold `/lib/supabase.ts` client + `/types/database.ts`
-5. Start Closet inventory feature (branch: `feature/closet-inventory`)
+1. Add `BRAVE_API_KEY` to `.env.local`
+2. Build `feature/auth` — login + signup screens using Supabase Auth
+3. Build `feature/outfit-builder` — outfit creation screen
+4. Build `feature/gap-analysis` — gap analysis screen
+5. Build `feature/trends` — trend radar screen
