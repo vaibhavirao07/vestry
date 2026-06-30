@@ -16,12 +16,10 @@ Phase 1 — Closet inventory complete. Needs auth screens before the app is usab
 - `hooks/useAddItem` — Supabase insert with optimistic update ✓
 - `app/api/search/route.ts` — Brave Search proxy ✓
 
-## Blocked on
-Auth screens (`/auth/login`, `/auth/signup`) — proxy.ts redirects unauthenticated users there but the pages don't exist yet
-
 ## Next steps
-1. Add `BRAVE_API_KEY` to `.env.local`
-2. Build `feature/auth` — login + signup screens using Supabase Auth
-3. Build `feature/outfit-builder` — outfit creation screen
-4. Build `feature/gap-analysis` — gap analysis screen
-5. Build `feature/trends` — trend radar screen
+1. Build `feature/outfit-builder` — outfit creation screen
+2. Build `feature/gap-analysis` — gap analysis screen
+3. Build `feature/trends` — trend radar screen
+
+## One Supabase dashboard setting
+Authentication → Settings → disable **"Enable email confirmations"** for instant post-signup redirect to /closet. If left on, users see the "check your inbox" state instead.
