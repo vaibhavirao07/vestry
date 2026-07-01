@@ -1,58 +1,29 @@
 # Vestry — Status
 
 ## Current milestone
-Phase 1 — Closet inventory built and working. Search-to-add blocked on Serper API key. Outfit builder next.
+✅ Phase 1 complete — all 5 features built and working.
 
-## What's done
+## Phase 1 — Done
 - Supabase schema (6 tables, RLS, trigger, 3 views, trend seeds) ✓
-- `lib/supabase/client.ts` + `server.ts` — typed Supabase clients ✓
-- `types/database.ts` — full Database generic with Relationships fields ✓
-- `proxy.ts` — Next.js 16 auth gate ✓
-- `app/(main)/layout.tsx` + `BottomNav` — 4-tab shell ✓
-- `app/(main)/closet/page.tsx` — server-side data fetch from `item_stats` view ✓
-- `ClosetView` — 2-col grid, category filter, FAB, optimistic item add ✓
-- `AddItemDrawer` — 2-step flow: search → auto-fill form → save ✓
-- `ItemCard` — image, name, brand, cost-per-wear display ✓
-- `hooks/useAddItem` — Supabase insert with optimistic update ✓
-- `app/api/search/route.ts` — Serper shopping search proxy ✓
-- Default categories seeded for test user (`8c0e85d4-ec0e-48eb-8f28-25331d35c0a9`) ✓
+- Typed Supabase clients (`lib/supabase/client.ts` + `server.ts`) ✓
+- `types/database.ts` — full Database generic ✓
+- `proxy.ts` — Next.js 16 auth gate (bypassed for dev; re-enable before launch) ✓
+- Root layout + 4-tab BottomNav (Closet / Outfits / Gaps / Trends) ✓
+- **Closet inventory** — Channel3 search-to-add, item grid, category filter, cost-per-wear ✓
+- **Outfit builder** — create outfits, occasion tags, item picker, detail view ✓
+- **Wear logging** — Mark as worn CTA, `wear_logs` insert, optimistic count update ✓
+- **Gap analysis** — ranked by `gap_score`, proportional bars, High/Medium/Low badges ✓
+- **Trend radar** — SS25 seeds grouped by category ✓
 
-## Current state
+## Must fix before Phase 2
+1. **Auth redirect bug** — `proxy.ts` redirect is commented out; re-enable the auth gate block and remove the TEMPORARY bypass from all page.tsx files and hooks.
+2. **Channel3 fashion filter** — `category_ids: ['xoN']` was tested but returned empty results. Investigate correct filter param with Channel3 support before re-adding.
 
-### Auth
-**Temporarily bypassed for testing — NOT production-ready.**
-`proxy.ts` redirect-to-login is commented out; `closet/page.tsx` skips the auth check.
-Must be re-enabled before launch.
+## Phase 2 — Planned features
+> Do not build until explicitly asked.
 
-### Closet inventory
-Working. Categories seeded correctly for test user; dropdown populates; items can be added manually.
-
-### Search-to-add
-**Blocked.** `SERPER_API_KEY` in `.env.local` returns `403 Unauthorized` from both
-`/shopping` and `/search` endpoints. Route code is correct — the key itself is invalid/over-quota.
-
-Debugging steps taken:
-- Confirmed route reads `SERPER_API_KEY` (correct env var name) ✓
-- Direct curl to Serper returns `{"message":"Unauthorized.","statusCode":403}` ✓
-- Local `/api/search?q=hollister` returns `{"results":[]}` (empty because `!res.ok` branch fires) ✓
-
-**Next action:** replace key in `.env.local` with a valid key from serper.dev, then verify with:
-```
-curl -s -X POST https://google.serper.dev/shopping \
-  -H "X-API-KEY: <new-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"q": "hollister jeans", "num": 2}'
-```
-Expected: JSON with `shoppingResults` array. If 200, search is unblocked.
-
-### Outfit builder
-Plan approved, not yet built. Branch: `feature/outfit-builder` (not created yet).
-
-## Next session
-1. Verify new Serper key works via curl test above.
-2. If search unblocked → smoke-test search-to-add flow end-to-end.
-3. If search debugging takes too long → move on to outfit builder and return to search after.
-4. Re-enable auth gate before any production deploy.
-
-## One Supabase dashboard setting
-Authentication → Settings → disable **"Enable email confirmations"** for instant post-signup redirect to /closet.
+- **Smart shop** — personalised shopping recommendations based on gap analysis + wear data
+- **Platform comparison** — compare same item across retailers (price, stock, sizing)
+- **Size intelligence** — track what sizes fit across brands; surface sizing notes on search results
+- **Consumer psychology** — impulse-buy guardrails, cost-per-wear projections before purchase
+- **Inspo module** — save outfit inspiration images; match to items already in closet
