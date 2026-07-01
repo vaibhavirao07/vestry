@@ -17,7 +17,15 @@
 
 ## Must fix before Phase 2
 1. **Auth redirect bug** — `proxy.ts` redirect is commented out; re-enable the auth gate block and remove the TEMPORARY bypass from all page.tsx files and hooks.
-2. **Channel3 fashion filter** — `category_ids: ['xoN']` was tested but returned empty results. Investigate correct filter param with Channel3 support before re-adding.
+2. **Channel3 fashion filter** — `category_ids: ['xoN']` was tested but returned empty results; reverted. Investigate correct filter param with Channel3 docs/support before re-adding.
+
+## Session notes (2026-06-30)
+- Switched search from Serper → Channel3 (`POST /v1/search`, `x-api-key`, response key `products[]`)
+- Fixed `worn_on` → `worn_at` column name in `useLogWear.ts`
+- Fixed BottomNav `/gap` → `/gaps` path mismatch
+- Fixed `OutfitCard` — was a `<div>`, now a `<Link>` to `/outfits/[id]`
+- Disabled `includeCoAuthoredBy` in `~/.claude/settings.json` — co-author trailers were breaking Vercel Hobby plan deployments
+- Phase 1 merged to main and pushed (`4cba715..02333c5`)
 
 ## Phase 2 — Planned features
 > Do not build until explicitly asked.
