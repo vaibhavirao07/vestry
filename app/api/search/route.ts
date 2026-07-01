@@ -16,19 +16,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] })
   }
 
-  const apiKey = process.env.SERPER_API_KEY
+  const apiKey = process.env.CHANNEL3_API_KEY
   if (!apiKey) {
     return NextResponse.json({ results: [] })
   }
 
   try {
-    const res = await fetch('https://google.serper.dev/shopping', {
+    const res = await fetch('https://api.trychannel3.com/v1/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-KEY': apiKey,
+        'x-api-key': apiKey,
       },
-      body: JSON.stringify({ q, num: 8 }),
+      body: JSON.stringify({ query: q, limit: 8 }),
       next: { revalidate: 60 },
     })
 
@@ -37,16 +37,29 @@ export async function GET(request: Request) {
     const data = await res.json()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results: SearchResult[] = (data.shoppingResults ?? []).slice(0, 8).map((r: any) => {
-      // Serper returns price as a string e.g. "$89.99" or "From $49.99"
-      const priceMatch = String(r.price ?? '').match(/[\d]+\.?\d*/)
-      const price = priceMatch ? parseFloat(priceMatch[0]) : null
+    const results: SearchResult[] = (data.products ?? []).slice(0, 8).map((r: any) => {
+      // brands is an array — grab the first one
+      const brand: string | null = r.brands?.[0]?.name ?? null
+
+      // prefer is_cleaned_image (white bg), then is_main_image, then first image
+      const images: any[] = r.images ?? []
+      const image =
+        images.find((i) => i.is_cleaned_image)?.url ??
+        images.find((i) => i.is_main_image)?.url ??
+        images[0]?.url ??
+        null
+
+      // price is already a number inside offers[0].price.price
+      const price: number | null = r.offers?.[0]?.price?.price ?? null
+
+      // buy link includes Channel3 affiliate tracking
+      const source_url: string = r.offers?.[0]?.url ?? ''
 
       return {
         name: r.title ?? '',
-        brand: r.source ?? null,   // merchant/retailer name
-        image_url: r.imageUrl ?? null,
-        source_url: r.link ?? '',
+        brand,
+        image_url: image,
+        source_url,
         price,
       }
     })

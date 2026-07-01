@@ -92,11 +92,12 @@ export function ItemForm({ prefill, categories, onSubmit, isLoading }: Props) {
         </Field>
       </div>
 
-      <Field label="Category">
+      <Field label="Category *">
         <select
           value={form.category_id}
           onChange={(e) => set('category_id', e.target.value)}
           className={inputCls}
+          required
         >
           <option value="">Select category</option>
           {categories.map((cat) => (
