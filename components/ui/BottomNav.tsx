@@ -28,7 +28,7 @@ const tabs: { href: string; label: string; icon: ReactNode }[] = [
     ),
   },
   {
-    href: '/gap',
+    href: '/gaps',
     label: 'Gaps',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-6 h-6">
