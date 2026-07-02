@@ -77,6 +77,8 @@ Wardrobe gaps: ${gapNames || 'none identified'}`
   const c3Data = await c3Res.json()
   console.log('[shop] Channel3 raw product count:', c3Data.products?.length ?? 0)
 
+  console.log('[shop] offers for product 0:', JSON.stringify(c3Data.products[0].offers, null, 2))
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawProducts: RawProduct[] = (c3Data.products ?? []).slice(0, 20).map((r: any) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -187,6 +189,7 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
       estimated_cpw: s.estimated_cpw ?? null,
     }))
 
+  console.log('[shop] mapped offers for result 0:', JSON.stringify(results[0]?.offers, null, 2))
 
   return NextResponse.json({ results, parsedIntent: parsed })
 }

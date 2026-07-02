@@ -37,12 +37,12 @@ export function PlatformRow({ offer, badges }: { offer: ShopOffer; badges: Badge
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          {offer.delivery && (
-            <span className="text-[11px] text-ink/40">{offer.delivery}</span>
-          )}
-          {offer.return_days != null && (
-            <span className="text-[11px] text-ink/40">{offer.return_days}-day returns</span>
-          )}
+          <span className="text-[11px] text-ink/40">
+            {offer.delivery ?? 'Check site'}
+          </span>
+          <span className="text-[11px] text-ink/40">
+            {offer.return_days != null ? `${offer.return_days}-day returns` : 'Returns vary'}
+          </span>
         </div>
       </div>
 
