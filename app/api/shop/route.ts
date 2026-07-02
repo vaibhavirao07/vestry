@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { callHaiku } from '@/lib/claude'
+import { evaluateViolations, determineVerdict } from '@/lib/nudge'
 import type { ClosetSummary, ParsedIntent, ShopResult } from '@/types/shop'
 
 type RawProduct = {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   const channel3ApiKey = process.env.CHANNEL3_API_KEY
-  if (!channel3ApiKey || !process.env.ANTHROPIC_API_KEY) {
+  if (!channel3ApiKey || !process.env.CLAUDE_API_KEY) {
     return NextResponse.json({ error: 'Missing API configuration' }, { status: 500 })
   }
 
@@ -28,6 +29,9 @@ export async function POST(request: Request) {
     .map((i) => `${i.name}${i.colour ? ` (${i.colour})` : ''}, worn ${i.times_worn}x`)
     .join('\n')
   const gapNames = closetSummary.topGaps.map((g) => g.category_name).join(', ')
+
+  console.log('[shop] closetSummary items count:', closetSummary.items.length)
+  console.log('[shop] closet lines sent to Claude:\n', closetLines || '(empty)')
 
   const intentSystem = `You are a fashion assistant. Given a natural language shopping query and the user's existing wardrobe, extract structured intent and build an optimised Channel3 product search string.
 Respond ONLY with valid JSON — no markdown, no explanation:
@@ -49,25 +53,31 @@ Wardrobe gaps: ${gapNames || 'none identified'}`
   let parsed: ParsedIntent
   try {
     const raw = await callHaiku(intentSystem, intentUser)
+    console.log('[shop] intent raw response:', raw)
     parsed = JSON.parse(raw.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
+    console.log('[shop] parsed intent:', parsed)
+  } catch (err) {
+    console.error('[shop] intent parse failed:', err)
     return NextResponse.json({ error: 'Failed to parse intent' }, { status: 500 })
   }
 
-  // Step 2: Channel3 product search using the AI-generated query
+  // Step 2: Channel3 product search — request 50, take top 20 after scoring
   const c3Res = await fetch('https://api.trychannel3.com/v1/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': channel3ApiKey },
-    body: JSON.stringify({ query: parsed.channel3Query, limit: 8 }),
+    body: JSON.stringify({ query: parsed.channel3Query, limit: 50 }),
   })
 
   if (!c3Res.ok) {
+    console.error('[shop] Channel3 error:', c3Res.status, await c3Res.text())
     return NextResponse.json({ results: [] })
   }
 
   const c3Data = await c3Res.json()
+  console.log('[shop] Channel3 raw product count:', c3Data.products?.length ?? 0)
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawProducts: RawProduct[] = (c3Data.products ?? []).slice(0, 8).map((r: any) => {
+  const rawProducts: RawProduct[] = (c3Data.products ?? []).slice(0, 20).map((r: any) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const images: any[] = r.images ?? []
     const image =
@@ -84,6 +94,8 @@ Wardrobe gaps: ${gapNames || 'none identified'}`
     }
   })
 
+  console.log('[shop] rawProducts after mapping:', rawProducts.length)
+
   if (rawProducts.length === 0) {
     return NextResponse.json({ results: [] })
   }
@@ -93,16 +105,16 @@ Wardrobe gaps: ${gapNames || 'none identified'}`
 
   const scoringSystem = `You are a fashion stylist. Score each product for compatibility with the user's wardrobe.
 Respond ONLY with valid JSON — no markdown, no explanation.
-Return an array with the top 3-5 most compatible items:
+Return an array with up to 15 most compatible items, sorted by compatibility_score descending:
 [{
   "product_index": number,
   "compatibility_score": number (0-100),
-  "outfit_preview": ["closet item name", "closet item name"] (2-3 real items from the user's closet that pair well),
-  "estimated_cpw": number | null (price ÷ estimated lifetime wears: shoes=150, tops/pants=80, bags=200, jackets=100, accessories=120)
+  "outfit_preview": ["closet item name", "closet item name"],
+  "estimated_cpw": number | null
 }]`
 
   const scoringUser = `User's closet items:
-${closetItemNames.length ? closetItemNames.join('\n') : '(empty closet)'}
+${closetItemNames.length ? closetItemNames.join('\n') : '(empty closet — score based on general versatility)'}
 
 Products to score:
 ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${p.price ?? '?'}`).join('\n')}`
@@ -114,25 +126,87 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
     estimated_cpw: number | null
   }[]
   try {
-    const raw = await callHaiku(scoringSystem, scoringUser)
-    scored = JSON.parse(raw.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
-    scored = rawProducts.slice(0, 3).map((_, i) => ({
-      product_index: i,
+    const raw = await callHaiku(scoringSystem, scoringUser, 4096)
+    console.log('[shop] scoring raw response >>>>\n', raw, '\n<<<<')
+    // Strip markdown fences, find the JSON array
+    const fenceStripped = raw.replace(/```json\n?|\n?```/g, '').trim()
+    const arrayStart = fenceStripped.indexOf('[')
+    const arrayEnd = fenceStripped.lastIndexOf(']')
+    if (arrayStart === -1 || arrayEnd === -1) {
+      throw new Error(`No JSON array found in response: ${fenceStripped.slice(0, 200)}`)
+    }
+    const cleaned = fenceStripped.slice(arrayStart, arrayEnd + 1)
+    scored = JSON.parse(cleaned)
+    console.log('[shop] scored items count:', scored.length)
+  } catch (err) {
+    console.error('[shop] scoring parse failed:', err)
+    // Fall back: return all raw products with no scores rather than 0%
+    const results: ShopResult[] = rawProducts.map((p) => ({
+      ...p,
       compatibility_score: 0,
       outfit_preview: [],
       estimated_cpw: null,
     }))
+    return NextResponse.json({ results, parsedIntent: parsed })
   }
 
-  const results: ShopResult[] = scored
-    .filter((s) => s.product_index < rawProducts.length)
-    .map((s) => ({
+  const validScored = scored.filter((s) => s.product_index < rawProducts.length)
+
+  // Step 4: Run nudge rule engine for each scored product
+  const nudgeInputs = validScored.map((s) => {
+    const product = rawProducts[s.product_index]
+    const violations = evaluateViolations(
+      { ...product, compatibility_score: s.compatibility_score, outfit_preview: [], estimated_cpw: s.estimated_cpw ?? null },
+      parsed,
+      closetSummary,
+    )
+    return { product_index: s.product_index, violations, verdict: determineVerdict(violations) }
+  })
+
+  // Step 5: One Claude call to write nudge messages for amber/red cards
+  const needsMessage = nudgeInputs.filter((n) => n.verdict !== 'green')
+  const nudgeMessages: Record<number, string> = {}
+
+  if (needsMessage.length > 0) {
+    const nudgeSystem = `You are a warm, honest wardrobe assistant writing concise nudge messages to help users shop intentionally.
+Each message should be under 12 words, friendly, and specific to the violation.
+Amber tone: gently curious. Red tone: direct but kind.
+Respond ONLY with valid JSON: {"nudges":[{"product_index":number,"message":"string"}]}`
+
+    const nudgeUser = needsMessage
+      .map((n) =>
+        `Product ${n.product_index}: ${rawProducts[n.product_index].name}\nViolations: ${n.violations.map((v) => v.detail).join('; ')}\nVerdict: ${n.verdict}`,
+      )
+      .join('\n\n')
+
+    try {
+      const raw = await callHaiku(nudgeSystem, nudgeUser, 1024)
+      const cleaned = raw.replace(/```json\n?|\n?```/g, '').trim()
+      const parsed2 = JSON.parse(cleaned)
+      for (const n of parsed2.nudges ?? []) {
+        nudgeMessages[n.product_index] = n.message
+      }
+    } catch {
+      // Fall back to raw violation detail strings
+      for (const n of needsMessage) {
+        nudgeMessages[n.product_index] = n.violations[0]?.detail ?? ''
+      }
+    }
+  }
+
+  const results: ShopResult[] = validScored.map((s) => {
+    const nudgeData = nudgeInputs.find((n) => n.product_index === s.product_index)
+    const verdict = nudgeData?.verdict ?? 'green'
+    return {
       ...rawProducts[s.product_index],
       compatibility_score: s.compatibility_score,
       outfit_preview: s.outfit_preview ?? [],
       estimated_cpw: s.estimated_cpw ?? null,
-    }))
+      nudge: verdict !== 'green'
+        ? { verdict: verdict as 'amber' | 'red', message: nudgeMessages[s.product_index] ?? '' }
+        : undefined,
+    }
+  })
 
   return NextResponse.json({ results, parsedIntent: parsed })
 }

@@ -2,72 +2,48 @@
 
 import Image from 'next/image'
 import type { ShopResult } from '@/types/shop'
+import { NudgeBanner } from './NudgeBanner'
 
 export function ShopResultCard({ result }: { result: ShopResult }) {
-  const score = result.compatibility_score
-  const barColor =
-    score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-400' : 'bg-ink/20'
-
   return (
-    <div className="bg-white rounded-2xl border border-ink/8 overflow-hidden">
-      {result.image_url && (
-        <div className="relative aspect-square bg-stone-50">
+    <a
+      href={result.source_url || undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-white rounded-xl border border-ink/8 overflow-hidden flex flex-col active:opacity-70"
+    >
+      <div className="relative aspect-square overflow-hidden bg-stone-100">
+        {result.image_url ? (
           <Image
             src={result.image_url}
             alt={result.name}
             fill
-            className="object-cover"
+            className="object-cover object-top"
             unoptimized
           />
-        </div>
-      )}
-      <div className="p-4 flex flex-col gap-3">
-        <div>
-          <p className="font-medium text-sm leading-snug">{result.name}</p>
-          {result.brand && (
-            <p className="text-xs text-ink/50 mt-0.5">{result.brand}</p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {result.price != null && (
-            <span className="text-sm font-semibold">${result.price}</span>
-          )}
-          <div className="flex items-center gap-2 ml-auto">
-            <div className="h-1.5 w-20 bg-ink/10 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${barColor}`}
-                style={{ width: `${score}%` }}
-              />
-            </div>
-            <span className="text-xs text-ink/50 tabular-nums w-8">{score}%</span>
-          </div>
-        </div>
-
-        {result.outfit_preview.length > 0 && (
-          <p className="text-xs text-ink/60 leading-relaxed">
-            <span className="font-medium text-ink/80">Pairs with: </span>
-            {result.outfit_preview.join(', ')}
-          </p>
+        ) : (
+          <div className="w-full h-full bg-stone-100" />
         )}
-
-        {result.estimated_cpw != null && (
-          <p className="text-xs font-medium text-accent">
-            Est. ${result.estimated_cpw.toFixed(2)}/wear
-          </p>
-        )}
-
-        {result.source_url && (
-          <a
-            href={result.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 block text-center text-xs font-semibold text-white bg-accent rounded-xl py-2.5"
-          >
-            Buy →
-          </a>
-        )}
+        <span className="absolute top-1.5 right-1.5 bg-accent text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-tight">
+          {result.compatibility_score}%
+        </span>
       </div>
-    </div>
+
+      <div className="px-2 py-1.5 flex flex-col gap-0.5">
+        <p className="text-[11px] font-medium leading-tight line-clamp-1">{result.name}</p>
+        <div className="flex items-center justify-between gap-1">
+          {result.price != null && (
+            <span className="text-[11px] font-semibold">${result.price}</span>
+          )}
+          {result.estimated_cpw != null && (
+            <span className="text-[9px] text-ink/40 ml-auto">${result.estimated_cpw.toFixed(2)}/wear</span>
+          )}
+        </div>
+      </div>
+
+      {result.nudge && (
+        <NudgeBanner verdict={result.nudge.verdict} message={result.nudge.message} />
+      )}
+    </a>
   )
 }
