@@ -36,42 +36,55 @@ async function checkDuplicate(
   const matching = items.filter((i) => i.category_name && categoriesMatch(parsedCategory, i.category_name))
   if (matching.length < 3) return null
 
-  const system = `You are a fashion expert reviewing wardrobe similarity. Be strict.
-Only mark two items as similar if their silhouette, neckline, AND occasion are all comparable.
-If any of those three differ meaningfully, they are NOT similar — even if same category and colour.
+  const itemList = matching
+    .map((i, idx) => `${idx + 1}) ${i.name}${i.colour ? ` (${i.colour})` : ''}`)
+    .join('\n')
 
-Examples of items that are NOT similar:
-- Crew neck tee ≠ half-zip athletic top (different neckline + occasion)
-- V-neck top ≠ balloon sleeve blouse (different silhouette)
-- Crop top ≠ peplum top (different silhouette)
-- Basic tee ≠ oversized knit sweater (different silhouette + fabric weight)
+  const system = `You are a strict fashion expert checking if a new purchase duplicates something the user already owns.
+You will be given a product name and a numbered list of items the user already owns in the same category.
+Return ONLY the item numbers from the owned list that are genuinely similar in BOTH silhouette AND occasion to the new product.
 
-Examples of items that ARE similar:
-- Basic tee ✓ similar to another basic tee
-- V-neck blouse ✓ similar to another V-neck blouse
-- Fitted crew neck tee ✓ similar to another fitted crew neck tee
+Rules:
+- Silhouette AND occasion must both match closely — one alone is not enough
+- Neckline differences (crew vs V-neck vs half-zip) mean they are NOT similar
+- Sleeve differences (balloon sleeve vs fitted) mean they are NOT similar
+- Crop length vs full length = NOT similar
+- Athletic/sport vs casual/dressy = NOT similar
+- When in doubt, do NOT include the item
 
-When in doubt, return an empty array. False negatives are better than false positives here.
-Respond ONLY with valid JSON: {"similar_items": ["item name", ...]}`
+Examples of NOT similar (do not flag these):
+- "Balloon sleeve blouse" vs "Uniqlo Crew Neck T-shirt" → different silhouette
+- "Half-zip athletic top" vs "V-neck top" → different neckline and occasion
+- "Peplum top" vs "White crop top" → different silhouette
+- "Oversized knit" vs "Basic fitted tee" → different silhouette
 
-  const user = `Product being considered: "${productName}"
+Examples of similar (do flag these):
+- "White crew neck tee" vs "Uniqlo Crew Neck T-shirt" → same silhouette, same occasion ✓
+- "V-neck linen blouse" vs "Vuori V-neck top" → same neckline, similar occasion ✓
 
-Existing wardrobe items in the same category:
-${matching.map((i) => `- ${i.name}${i.colour ? ` (${i.colour})` : ''}`).join('\n')}`
+Respond ONLY with valid JSON: {"similar_item_numbers": [1, 3, ...]}`
+
+  const user = `New product being considered: "${productName}"
+
+Items the user already owns in this category:
+${itemList}
+
+Which item numbers (if any) are genuinely similar in silhouette AND occasion to "${productName}"?`
 
   try {
-    const raw = await callHaiku(system, user, 512)
+    const raw = await callHaiku(system, user, 256)
     const cleaned = raw.replace(/```json\n?|\n?```/g, '').trim()
-    const result: { similar_items: string[] } = JSON.parse(cleaned)
-    const similar = result.similar_items ?? []
+    const result: { similar_item_numbers: number[] } = JSON.parse(cleaned)
+    const similarIndices = (result.similar_item_numbers ?? []).filter(
+      (n) => typeof n === 'number' && n >= 1 && n <= matching.length,
+    )
 
-    if (similar.length === 0) return null
+    // Only fire if 2+ owned items are genuinely similar — prevents single-item false positives
+    if (similarIndices.length < 2) return null
 
     return {
       rule: 'duplicate',
-      detail: similar.length === 1
-        ? `You already own something very similar: ${similar[0]}`
-        : `You already own ${similar.length} genuinely similar styles`,
+      detail: `You already own ${similarIndices.length} genuinely similar styles`,
     }
   } catch {
     // Claude call failed — fall back to raw count so the rule still works
