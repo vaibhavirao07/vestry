@@ -61,11 +61,11 @@ export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
       </form>
 
       {loading && (
-        <div className="px-4 flex flex-col gap-4">
-          {[1, 2, 3].map((i) => (
+        <div className="px-4 grid grid-cols-5 gap-2">
+          {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl border border-ink/8 h-72 animate-pulse"
+              className="bg-white rounded-xl border border-ink/8 aspect-square animate-pulse"
             />
           ))}
         </div>
@@ -78,13 +78,15 @@ export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
       )}
 
       {!loading && results.length > 0 && (
-        <div className="px-4 flex flex-col gap-4">
+        <div className="px-4 flex flex-col gap-3">
           {searchedFor && (
             <p className="text-xs text-ink/40">Searched for: &ldquo;{searchedFor}&rdquo;</p>
           )}
-          {results.map((r, i) => (
-            <ShopResultCard key={i} result={r} />
-          ))}
+          <div className="grid grid-cols-5 gap-2">
+            {results.map((r, i) => (
+              <ShopResultCard key={i} result={r} />
+            ))}
+          </div>
         </div>
       )}
 

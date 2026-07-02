@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import type { ShopResult } from '@/types/shop'
-import { NudgeBanner } from './NudgeBanner'
 
 export function ShopResultCard({ result }: { result: ShopResult }) {
   return (
@@ -40,10 +39,6 @@ export function ShopResultCard({ result }: { result: ShopResult }) {
           )}
         </div>
       </div>
-
-      {result.nudge && (
-        <NudgeBanner verdict={result.nudge.verdict} message={result.nudge.message} />
-      )}
     </a>
   )
 }

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { callHaiku } from '@/lib/claude'
-import { evaluateViolations, determineVerdict } from '@/lib/nudge'
 import type { ClosetSummary, ParsedIntent, ShopResult } from '@/types/shop'
 
 type RawProduct = {
@@ -128,7 +127,6 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
   try {
     const raw = await callHaiku(scoringSystem, scoringUser, 4096)
     console.log('[shop] scoring raw response >>>>\n', raw, '\n<<<<')
-    // Strip markdown fences, find the JSON array
     const fenceStripped = raw.replace(/```json\n?|\n?```/g, '').trim()
     const arrayStart = fenceStripped.indexOf('[')
     const arrayEnd = fenceStripped.lastIndexOf(']')
@@ -140,7 +138,6 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
     console.log('[shop] scored items count:', scored.length)
   } catch (err) {
     console.error('[shop] scoring parse failed:', err)
-    // Fall back: return all raw products with no scores rather than 0%
     const results: ShopResult[] = rawProducts.map((p) => ({
       ...p,
       compatibility_score: 0,
@@ -150,65 +147,14 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
     return NextResponse.json({ results, parsedIntent: parsed })
   }
 
-  const validScored = scored.filter((s) => s.product_index < rawProducts.length)
-
-  // Step 4: Run nudge rule engine for each scored product (parallel — one Claude call per card that hits the duplicate threshold)
-  const nudgeInputs = await Promise.all(
-    validScored.map(async (s) => {
-      const product = rawProducts[s.product_index]
-      const violations = await evaluateViolations(
-        { ...product, compatibility_score: s.compatibility_score, outfit_preview: [], estimated_cpw: s.estimated_cpw ?? null },
-        parsed,
-        closetSummary,
-      )
-      return { product_index: s.product_index, violations, verdict: determineVerdict(violations) }
-    }),
-  )
-
-  // Step 5: One Claude call to write nudge messages for amber/red cards
-  const needsMessage = nudgeInputs.filter((n) => n.verdict !== 'green')
-  const nudgeMessages: Record<number, string> = {}
-
-  if (needsMessage.length > 0) {
-    const nudgeSystem = `You are a warm, honest wardrobe assistant writing concise nudge messages to help users shop intentionally.
-Each message should be under 12 words, friendly, and specific to the violation.
-Amber tone: gently curious. Red tone: direct but kind.
-Respond ONLY with valid JSON: {"nudges":[{"product_index":number,"message":"string"}]}`
-
-    const nudgeUser = needsMessage
-      .map((n) =>
-        `Product ${n.product_index}: ${rawProducts[n.product_index].name}\nViolations: ${n.violations.map((v) => v.detail).join('; ')}\nVerdict: ${n.verdict}`,
-      )
-      .join('\n\n')
-
-    try {
-      const raw = await callHaiku(nudgeSystem, nudgeUser, 1024)
-      const cleaned = raw.replace(/```json\n?|\n?```/g, '').trim()
-      const parsed2 = JSON.parse(cleaned)
-      for (const n of parsed2.nudges ?? []) {
-        nudgeMessages[n.product_index] = n.message
-      }
-    } catch {
-      // Fall back to raw violation detail strings
-      for (const n of needsMessage) {
-        nudgeMessages[n.product_index] = n.violations[0]?.detail ?? ''
-      }
-    }
-  }
-
-  const results: ShopResult[] = validScored.map((s) => {
-    const nudgeData = nudgeInputs.find((n) => n.product_index === s.product_index)
-    const verdict = nudgeData?.verdict ?? 'green'
-    return {
+  const results: ShopResult[] = scored
+    .filter((s) => s.product_index < rawProducts.length)
+    .map((s) => ({
       ...rawProducts[s.product_index],
       compatibility_score: s.compatibility_score,
       outfit_preview: s.outfit_preview ?? [],
       estimated_cpw: s.estimated_cpw ?? null,
-      nudge: verdict !== 'green'
-        ? { verdict: verdict as 'amber' | 'red', message: nudgeMessages[s.product_index] ?? '' }
-        : undefined,
-    }
-  })
+    }))
 
   return NextResponse.json({ results, parsedIntent: parsed })
 }

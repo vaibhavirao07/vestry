@@ -15,7 +15,7 @@ export type ShopResult = {
   compatibility_score: number
   outfit_preview: string[]
   estimated_cpw: number | null
-  nudge?: { verdict: 'amber' | 'red'; message: string }
+
 }
 
 export type ClosetSummary = {

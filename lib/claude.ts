@@ -1,11 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
 
-export async function callHaiku(system: string, user: string): Promise<string> {
+export async function callHaiku(system: string, user: string, maxTokens = 2048): Promise<string> {
   const msg = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
+    max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content: user }],
   })
