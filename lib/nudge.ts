@@ -1,3 +1,4 @@
+import { callHaiku } from '@/lib/claude'
 import type { RuleViolation, NudgeVerdict } from '@/types/nudge'
 import type { ClosetSummary, ParsedIntent, ShopResult } from '@/types/shop'
 
@@ -26,15 +27,44 @@ function categoriesMatch(a: string, b: string): boolean {
   return false
 }
 
-function checkDuplicate(
+// Only calls Claude when category count threshold is met — keeps token usage low
+async function checkDuplicate(
+  productName: string,
   parsedCategory: string,
   items: ClosetSummary['items'],
-): RuleViolation | null {
+): Promise<RuleViolation | null> {
   const matching = items.filter((i) => i.category_name && categoriesMatch(parsedCategory, i.category_name))
-  if (matching.length >= 3) {
-    return { rule: 'duplicate', detail: `You already own ${matching.length} similar items` }
+  if (matching.length < 3) return null
+
+  const system = `You are a fashion expert reviewing wardrobe similarity.
+Given a product being considered for purchase and a list of existing wardrobe items, identify which existing items are genuinely similar in style.
+Judge by neckline, silhouette, fabric type, and occasion — NOT just shared category or colour.
+A fishnet top and a crew neck tee are NOT similar even if both are white tops.
+Respond ONLY with valid JSON: {"similar_items": ["item name", ...]}`
+
+  const user = `Product being considered: "${productName}"
+
+Existing wardrobe items in the same category:
+${matching.map((i) => `- ${i.name}${i.colour ? ` (${i.colour})` : ''}`).join('\n')}`
+
+  try {
+    const raw = await callHaiku(system, user, 512)
+    const cleaned = raw.replace(/```json\n?|\n?```/g, '').trim()
+    const result: { similar_items: string[] } = JSON.parse(cleaned)
+    const similar = result.similar_items ?? []
+
+    if (similar.length === 0) return null
+
+    return {
+      rule: 'duplicate',
+      detail: similar.length === 1
+        ? `You already own something very similar: ${similar[0]}`
+        : `You already own ${similar.length} genuinely similar styles`,
+    }
+  } catch {
+    // Claude call failed — fall back to raw count so the rule still works
+    return { rule: 'duplicate', detail: `You already own ${matching.length} items in this category` }
   }
-  return null
 }
 
 function checkUnworn(
@@ -56,7 +86,6 @@ function checkMismatch(
   const wornItems = items.filter((i) => i.times_worn > 0 && i.colour)
   if (wornItems.length < 3) return null
 
-  // Tally colours weighted by wear count
   const colourCounts: Record<string, number> = {}
   for (const item of wornItems) {
     const c = normalise(item.colour!)
@@ -94,14 +123,15 @@ function checkImpulse(
   return null
 }
 
-export function evaluateViolations(
+export async function evaluateViolations(
   product: ShopResult,
   intent: ParsedIntent,
   closet: ClosetSummary,
-): RuleViolation[] {
+): Promise<RuleViolation[]> {
   const violations: RuleViolation[] = []
 
-  const dup = checkDuplicate(intent.category, closet.items)
+  // Duplicate check: async — calls Claude only when category count >= 3
+  const dup = await checkDuplicate(product.name, intent.category, closet.items)
   if (dup) violations.push(dup)
 
   const unworn = checkUnworn(intent.category, closet.items)

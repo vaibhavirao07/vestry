@@ -152,16 +152,18 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
 
   const validScored = scored.filter((s) => s.product_index < rawProducts.length)
 
-  // Step 4: Run nudge rule engine for each scored product
-  const nudgeInputs = validScored.map((s) => {
-    const product = rawProducts[s.product_index]
-    const violations = evaluateViolations(
-      { ...product, compatibility_score: s.compatibility_score, outfit_preview: [], estimated_cpw: s.estimated_cpw ?? null },
-      parsed,
-      closetSummary,
-    )
-    return { product_index: s.product_index, violations, verdict: determineVerdict(violations) }
-  })
+  // Step 4: Run nudge rule engine for each scored product (parallel — one Claude call per card that hits the duplicate threshold)
+  const nudgeInputs = await Promise.all(
+    validScored.map(async (s) => {
+      const product = rawProducts[s.product_index]
+      const violations = await evaluateViolations(
+        { ...product, compatibility_score: s.compatibility_score, outfit_preview: [], estimated_cpw: s.estimated_cpw ?? null },
+        parsed,
+        closetSummary,
+      )
+      return { product_index: s.product_index, violations, verdict: determineVerdict(violations) }
+    }),
+  )
 
   // Step 5: One Claude call to write nudge messages for amber/red cards
   const needsMessage = nudgeInputs.filter((n) => n.verdict !== 'green')
