@@ -3,13 +3,16 @@
 import Image from 'next/image'
 import type { ShopResult } from '@/types/shop'
 
-export function ShopResultCard({ result }: { result: ShopResult }) {
+type Props = {
+  result: ShopResult
+  onTap: (result: ShopResult) => void
+}
+
+export function ShopResultCard({ result, onTap }: Props) {
   return (
-    <a
-      href={result.source_url || undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="bg-white rounded-xl border border-ink/8 overflow-hidden flex flex-col active:opacity-70"
+    <button
+      onClick={() => onTap(result)}
+      className="bg-white rounded-xl border border-ink/8 overflow-hidden flex flex-col text-left w-full active:opacity-70"
     >
       <div className="relative aspect-square overflow-hidden bg-stone-100">
         {result.image_url ? (
@@ -39,6 +42,6 @@ export function ShopResultCard({ result }: { result: ShopResult }) {
           )}
         </div>
       </div>
-    </a>
+    </button>
   )
 }

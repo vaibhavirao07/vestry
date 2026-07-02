@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ShopResultCard } from './ShopResultCard'
+import { ProductDetailSheet } from './ProductDetailSheet'
 import type { ClosetSummary, ShopResult } from '@/types/shop'
 
 const EXAMPLE_QUERIES = [
@@ -16,6 +17,7 @@ export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [searchedFor, setSearchedFor] = useState<string | null>(null)
+  const [selectedResult, setSelectedResult] = useState<ShopResult | null>(null)
 
   async function runSearch(q: string) {
     if (!q.trim() || loading) return
@@ -84,7 +86,7 @@ export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
           )}
           <div className="grid grid-cols-5 gap-2">
             {results.map((r, i) => (
-              <ShopResultCard key={i} result={r} />
+              <ShopResultCard key={i} result={r} onTap={setSelectedResult} />
             ))}
           </div>
         </div>
@@ -117,6 +119,10 @@ export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
           </div>
         </div>
       )}
+      <ProductDetailSheet
+        result={selectedResult}
+        onClose={() => setSelectedResult(null)}
+      />
     </div>
   )
 }

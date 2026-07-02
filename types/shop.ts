@@ -1,3 +1,15 @@
+export type ShopOffer = {
+  platform: string
+  domain: string
+  price: number | null
+  compare_at_price: number | null
+  url: string
+  return_days: number | null
+  delivery: string | null
+  delivery_min: number | null
+  availability: string | null
+}
+
 export type ParsedIntent = {
   category: string
   colour: string
@@ -15,7 +27,7 @@ export type ShopResult = {
   compatibility_score: number
   outfit_preview: string[]
   estimated_cpw: number | null
-
+  offers: ShopOffer[]
 }
 
 export type ClosetSummary = {

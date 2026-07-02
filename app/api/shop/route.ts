@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { callHaiku } from '@/lib/claude'
-import type { ClosetSummary, ParsedIntent, ShopResult } from '@/types/shop'
+import { getMerchantInfo, getDomainName } from '@/lib/merchants'
+import type { ClosetSummary, ParsedIntent, ShopOffer, ShopResult } from '@/types/shop'
 
 type RawProduct = {
   name: string
@@ -8,6 +9,7 @@ type RawProduct = {
   image_url: string | null
   source_url: string
   price: number | null
+  offers: ShopOffer[]
 }
 
 export async function POST(request: Request) {
@@ -84,12 +86,40 @@ Wardrobe gaps: ${gapNames || 'none identified'}`
       images.find((i) => i.is_main_image)?.url ??
       images[0]?.url ??
       null
+
+    // Extract all offers, enrich with static merchant data, sort by price, cap at 5
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const offers: ShopOffer[] = (r.offers ?? [])
+      .filter((o: any) => o.url && o.domain)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((o: any): ShopOffer => {
+        const merchant = getMerchantInfo(o.domain)
+        return {
+          platform: merchant?.name ?? getDomainName(o.domain),
+          domain: o.domain,
+          price: o.price?.price ?? null,
+          compare_at_price: o.price?.compare_at_price ?? null,
+          url: o.url,
+          return_days: merchant?.return_days ?? null,
+          delivery: merchant?.delivery ?? null,
+          delivery_min: merchant?.delivery_min ?? null,
+          availability: o.availability ?? null,
+        }
+      })
+      .sort((a: ShopOffer, b: ShopOffer) => {
+        if (a.price == null) return 1
+        if (b.price == null) return -1
+        return a.price - b.price
+      })
+      .slice(0, 5)
+
     return {
       name: r.title ?? '',
       brand: r.brands?.[0]?.name ?? null,
       image_url: image,
-      source_url: r.offers?.[0]?.url ?? '',
-      price: r.offers?.[0]?.price?.price ?? null,
+      source_url: offers[0]?.url ?? r.offers?.[0]?.url ?? '',
+      price: offers[0]?.price ?? r.offers?.[0]?.price?.price ?? null,
+      offers,
     }
   })
 
@@ -143,6 +173,7 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
       compatibility_score: 0,
       outfit_preview: [],
       estimated_cpw: null,
+      offers: p.offers,
     }))
     return NextResponse.json({ results, parsedIntent: parsed })
   }
@@ -155,6 +186,7 @@ ${rawProducts.map((p, i) => `${i}. ${p.name} — ${p.brand ?? 'unknown'} — $${
       outfit_preview: s.outfit_preview ?? [],
       estimated_cpw: s.estimated_cpw ?? null,
     }))
+
 
   return NextResponse.json({ results, parsedIntent: parsed })
 }
