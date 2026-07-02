@@ -36,10 +36,22 @@ async function checkDuplicate(
   const matching = items.filter((i) => i.category_name && categoriesMatch(parsedCategory, i.category_name))
   if (matching.length < 3) return null
 
-  const system = `You are a fashion expert reviewing wardrobe similarity.
-Given a product being considered for purchase and a list of existing wardrobe items, identify which existing items are genuinely similar in style.
-Judge by neckline, silhouette, fabric type, and occasion — NOT just shared category or colour.
-A fishnet top and a crew neck tee are NOT similar even if both are white tops.
+  const system = `You are a fashion expert reviewing wardrobe similarity. Be strict.
+Only mark two items as similar if their silhouette, neckline, AND occasion are all comparable.
+If any of those three differ meaningfully, they are NOT similar — even if same category and colour.
+
+Examples of items that are NOT similar:
+- Crew neck tee ≠ half-zip athletic top (different neckline + occasion)
+- V-neck top ≠ balloon sleeve blouse (different silhouette)
+- Crop top ≠ peplum top (different silhouette)
+- Basic tee ≠ oversized knit sweater (different silhouette + fabric weight)
+
+Examples of items that ARE similar:
+- Basic tee ✓ similar to another basic tee
+- V-neck blouse ✓ similar to another V-neck blouse
+- Fitted crew neck tee ✓ similar to another fitted crew neck tee
+
+When in doubt, return an empty array. False negatives are better than false positives here.
 Respond ONLY with valid JSON: {"similar_items": ["item name", ...]}`
 
   const user = `Product being considered: "${productName}"
