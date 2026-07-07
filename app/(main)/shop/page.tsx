@@ -4,7 +4,12 @@ import { ProfileLink } from '@/components/ui/ProfileLink'
 import type { ClosetSummary } from '@/types/shop'
 import type { Garment, SizeProfile } from '@/types/profile'
 
-export default async function ShopPage() {
+export default async function ShopPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const { q } = await searchParams
   const supabase = await createClient()
   // TEMPORARY — DO NOT SHIP: no auth redirect; queries return empty without a session.
   const [{ data: items }, { data: gaps }, { data: categories }, { data: profile }, { data: brandSizes }] = await Promise.all([
@@ -69,7 +74,7 @@ export default async function ShopPage() {
         </div>
         <ProfileLink />
       </header>
-      <ShopView closetSummary={closetSummary} sizeProfile={sizeProfile} />
+      <ShopView closetSummary={closetSummary} sizeProfile={sizeProfile} initialQuery={q ?? null} />
     </div>
   )
 }

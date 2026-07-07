@@ -1,7 +1,7 @@
 # Vestry — Status
 
 ## Current milestone
-Phase 2 in progress — Smart Shop (Module 9), Platform Comparison (Module 7) and Size Intelligence (Module 8) complete.
+Phase 2 feature-complete — Smart Shop (9), Platform Comparison (7), Size Intelligence (8) and Inspo (10) built.
 
 ## Phase 1 — Done
 - Supabase schema (6 tables, RLS, trigger, 3 views, trend seeds) ✓
@@ -21,16 +21,21 @@ Phase 2 in progress — Smart Shop (Module 9), Platform Comparison (Module 7) an
 - **Smart Shop (Module 9)** — natural language search, Claude Haiku intent parse + scoring, Channel3 product grid, 5-col Pinterest layout, compatibility % badge, est. cost-per-wear ✓
 - **Platform Comparison (Module 7)** — tap card opens detail sheet; Where to Buy list (up to 5 offers sorted by price); Best price / Fastest / Best returns badges; static merchant lookup for 18 US + UAE retailers; single-offer products open direct URL ✓
 - **Size Intelligence (Module 8)** — `/profile` screen (measurements with unit toggle + known brand sizes per garment); pure-logic size engine (universal ladder + per-brand fit offsets for 27 brands, no AI); size badge on Smart Shop cards; "Your Size" recommendation with reasoning in the detail sheet ✓
+- **Inspo (Module 10, web v1)** — `/inspo` mood board (6th nav tab); paste URL or upload screenshot → Claude Haiku vision extracts garments/aesthetic/occasion/palette → strict closet cross-reference (specific garment type + colour must match) → saved card; detail sheet shows ✓ owned / ✗ missing with "Find it →" deep-links into Smart Shop (`/shop?q=...` auto-search); native share sheet deferred to the mobile app ✓
 
 ### Planned (not started)
 - **Consumer psychology** — impulse-buy guardrails, cost-per-wear projections before purchase (revise with image-based similarity in Phase 3)
-- **Inspo module** — save outfit inspiration images; match to items already in closet
 
 ## Must fix before shipping
-0. **Run migration 002** — `supabase/migrations/002_profiles.sql` must be run in the Supabase SQL editor or the `/profile` screen and size recommendations return nothing.
+0. **Run migrations 002 + 003** — `supabase/migrations/002_profiles.sql` and `003_inspo.sql` must be run in the Supabase SQL editor (003 also creates the `inspo` storage bucket) or /profile, size recommendations and Inspo saving return nothing.
 1. **Auth redirect bug** — `proxy.ts` redirect is commented out; re-enable auth gate and remove all TEMPORARY bypass comments from page.tsx files and hooks.
 2. **Channel3 multi-offer** — most products return only 1 offer from Channel3, so Platform Comparison rarely activates. Check Channel3 docs for a parameter to request multiple retailer offers per product.
 3. **Consumer psychology nudges** — removed after false-positive issues with text-based style similarity. Revisit in Phase 3 with image embeddings.
+
+## Session notes (2026-07-06, later)
+- Built Inspo on `feat/inspo`: migration 003 (`inspo_posts` + `inspo` storage bucket), `/api/inspo` (URL resolve → Haiku vision → strict closet match), mood board UI (grid, add drawer, detail sheet), 6th nav tab, `/shop?q=` deep-link
+- Verified live against the dev server: upload flow extracts garments/palette correctly; tightened the match prompt after a boots-vs-sneakers false positive (same broad category no longer sufficient — specific garment type + colour required, verified fixed); URL flow resolves og:image and returns image bytes for storage upload; bad links return a graceful "upload a screenshot" 422
+- Instagram URLs blocked without API access (known limitation) — UI suggests screenshot upload; native share sheet needs the mobile app (Phase 3)
 
 ## Session notes (2026-07-06)
 - Built Size Intelligence on `feat/size-intelligence`: migration 002 (`profiles` + `brand_sizes`), `lib/sizeCharts.ts` (7-step ladder + 27 brand fit entries), `lib/sizes.ts` (direct → cross-brand → measurements recommendation cascade), `/profile` screen with unit toggle, ProfileLink icon in all 5 headers, size badge + "Your Size" sheet section in Smart Shop

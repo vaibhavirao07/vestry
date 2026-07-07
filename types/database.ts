@@ -195,6 +195,42 @@ export interface Database {
         }
         Relationships: []
       }
+      inspo_posts: {
+        Row: {
+          id: string
+          user_id: string
+          source_url: string | null
+          image_url: string
+          aesthetic: string | null
+          occasion: string | null
+          palette: string[]
+          garments: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          source_url?: string | null
+          image_url: string
+          aesthetic?: string | null
+          occasion?: string | null
+          palette?: string[]
+          garments?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          source_url?: string | null
+          image_url?: string
+          aesthetic?: string | null
+          occasion?: string | null
+          palette?: string[]
+          garments?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       trends: {
         Row: {
           id: string
@@ -283,6 +319,7 @@ export type OutfitItem = Database['public']['Tables']['outfit_items']['Row']
 export type WearLog    = Database['public']['Tables']['wear_logs']['Row']
 export type Trend      = Database['public']['Tables']['trends']['Row']
 export type Profile    = Database['public']['Tables']['profiles']['Row']
+export type InspoPost  = Database['public']['Tables']['inspo_posts']['Row']
 export type BrandSize  = Database['public']['Tables']['brand_sizes']['Row']
 export type ItemStats  = Database['public']['Views']['item_stats']['Row']
 export type OutfitStats = Database['public']['Views']['outfit_stats']['Row']

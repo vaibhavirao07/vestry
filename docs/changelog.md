@@ -1,5 +1,17 @@
 # Vestry — Changelog
 
+## [Unreleased] — feat/inspo
+
+### Added
+- `supabase/migrations/003_inspo.sql` — `inspo_posts` table (garments as jsonb, palette text[], RLS) + public `inspo` Storage bucket with per-user upload/delete policies — **run in Supabase SQL editor before using the feature**
+- `types/inspo.ts` — `InspoGarment`, `InspoAnalysis`, `ClosetItemLite`; `types/database.ts` extended with `inspo_posts`
+- `lib/claude.ts` — `callHaikuVision()` (base64 image + text → Claude Haiku vision)
+- `app/api/inspo/route.ts` — POST: resolves a pasted URL to an image (TikTok oEmbed → og:image scrape; Instagram usually blocked → suggests screenshot) or accepts an uploaded image, runs Claude vision analysis (aesthetic, occasion, palette, garments), then a strict closet-matching call (same specific garment type + colour required; hallucinated names rejected against the real closet list)
+- `app/(main)/inspo/page.tsx` + `components/inspo/` — 2-col mood board grid (`InspoCard` with "N of M owned" count), `AddInspoDrawer` (paste URL / upload → analysing spinner → structured preview → save), `InspoDetailSheet` (image, aesthetic/occasion/palette chips, garment checklist with ✓ owned / ✗ missing + "Find it →" links, delete)
+- `hooks/useAddInspo.ts` — Storage upload to `inspo/<user_id>/<uuid>`, `inspo_posts` insert, delete with best-effort storage cleanup
+- `components/ui/BottomNav.tsx` — 6th "Inspo" tab (sparkles icon)
+- Smart Shop deep-link: `/shop?q=...` auto-runs the search on mount (`initialQuery` prop on `ShopView`) — missing inspo garments link straight into Smart Shop
+
 ## [Unreleased] — feat/size-intelligence
 
 ### Added

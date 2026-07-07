@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ShopResultCard } from './ShopResultCard'
 import { ProductDetailSheet } from './ProductDetailSheet'
 import { recommendSize } from '@/lib/sizes'
@@ -16,9 +16,11 @@ const EXAMPLE_QUERIES = [
 export function ShopView({
   closetSummary,
   sizeProfile,
+  initialQuery = null,
 }: {
   closetSummary: ClosetSummary
   sizeProfile: SizeProfile
+  initialQuery?: string | null
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ShopResult[]>([])
@@ -26,6 +28,16 @@ export function ShopView({
   const [searched, setSearched] = useState(false)
   const [searchedFor, setSearchedFor] = useState<string | null>(null)
   const [selectedResult, setSelectedResult] = useState<ShopResult | null>(null)
+  const ranInitialQuery = useRef(false)
+
+  // deep-link support: /shop?q=... auto-runs the search once on mount
+  useEffect(() => {
+    if (initialQuery && !ranInitialQuery.current) {
+      ranInitialQuery.current = true
+      runSearch(initialQuery)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery])
 
   async function runSearch(q: string) {
     if (!q.trim() || loading) return
@@ -46,7 +58,7 @@ export function ShopView({
     setLoading(false)
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault()
     runSearch(query)
   }
