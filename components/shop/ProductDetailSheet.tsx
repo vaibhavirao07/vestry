@@ -1,11 +1,14 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { PlatformRow } from './PlatformRow'
 import type { ShopResult, ShopOffer } from '@/types/shop'
+import type { SizeRecommendation } from '@/types/profile'
 
 type Props = {
   result: ShopResult | null
+  sizeRec: SizeRecommendation | null
   onClose: () => void
 }
 
@@ -29,7 +32,7 @@ function computeBadges(offers: ShopOffer[]) {
   return { bestPriceDomain, bestReturnsDomain, fastestDomain }
 }
 
-export function ProductDetailSheet({ result, onClose }: Props) {
+export function ProductDetailSheet({ result, sizeRec, onClose }: Props) {
   if (!result) return null
 
   const { offers, outfit_preview, compatibility_score, estimated_cpw } = result
@@ -99,6 +102,26 @@ export function ProductDetailSheet({ result, onClose }: Props) {
               </p>
             </div>
           )}
+
+          {/* Your Size */}
+          <div className="mb-5">
+            <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-1.5">
+              Your Size
+            </p>
+            {sizeRec ? (
+              <div className="flex items-center gap-3 bg-white border border-ink/8 rounded-xl px-3 py-3">
+                <span className="text-base font-semibold text-accent shrink-0">{sizeRec.size}</span>
+                <p className="text-xs text-ink/60 leading-relaxed">{sizeRec.reason}</p>
+              </div>
+            ) : (
+              <p className="text-xs text-ink/40">
+                <Link href="/profile" className="text-accent underline underline-offset-2">
+                  Add your sizes in Profile
+                </Link>{' '}
+                to see a recommendation here.
+              </p>
+            )}
+          </div>
 
           {/* Where to Buy */}
           <div>

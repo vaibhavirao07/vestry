@@ -1,5 +1,17 @@
 # Vestry — Changelog
 
+## [Unreleased] — feat/size-intelligence
+
+### Added
+- `supabase/migrations/002_profiles.sql` — `profiles` (measurements in inches/lbs + US shoe size) and `brand_sizes` (brand + garment + size, unique per user/brand/garment) tables with RLS — **run in Supabase SQL editor before using the feature**
+- `types/profile.ts` — `Garment`, `SizeProfile`, `SizeRecommendation` types; `types/database.ts` extended with `profiles` + `brand_sizes`
+- `lib/sizeCharts.ts` — universal 7-step size ladder (XXS–XXL with US numeric, bust/waist/hips ranges) + fit data (runs small / true / large per garment) for 27 brands
+- `lib/sizes.ts` — pure-logic recommendation engine: direct saved size → cross-brand conversion via ladder + fit offsets → measurements fallback; garment detected from product-name keywords (tops / bottoms / shoes)
+- `app/(main)/profile/page.tsx` + `components/profile/ProfileView.tsx` — measurements form with in/lbs ↔ cm/kg toggle (stored imperial), brand-sizes editor (add with brand datalist + garment select, delete)
+- `hooks/useProfile.ts` — `saveMeasurements` (upsert), `addBrandSize` (upsert on user/brand/garment), `removeBrandSize`
+- `components/ui/ProfileLink.tsx` — person icon linking to `/profile`, added to all 5 page headers
+- Smart Shop: size badge on result cards (bottom-left of image), "Your Size" section in `ProductDetailSheet` with recommendation + reasoning, or a link to Profile when no data
+
 ## [Unreleased] — feat/smart-shop
 
 ### Added

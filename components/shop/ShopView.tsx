@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { ShopResultCard } from './ShopResultCard'
 import { ProductDetailSheet } from './ProductDetailSheet'
+import { recommendSize } from '@/lib/sizes'
 import type { ClosetSummary, ShopResult } from '@/types/shop'
+import type { SizeProfile } from '@/types/profile'
 
 const EXAMPLE_QUERIES = [
   'white sneakers that go with everything',
@@ -11,7 +13,13 @@ const EXAMPLE_QUERIES = [
   'something fun for a summer date',
 ]
 
-export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
+export function ShopView({
+  closetSummary,
+  sizeProfile,
+}: {
+  closetSummary: ClosetSummary
+  sizeProfile: SizeProfile
+}) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ShopResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -86,7 +94,12 @@ export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
           )}
           <div className="grid grid-cols-5 gap-2">
             {results.map((r, i) => (
-              <ShopResultCard key={i} result={r} onTap={setSelectedResult} />
+              <ShopResultCard
+                key={i}
+                result={r}
+                sizeRec={recommendSize(sizeProfile, r.brand, r.name)}
+                onTap={setSelectedResult}
+              />
             ))}
           </div>
         </div>
@@ -121,6 +134,9 @@ export function ShopView({ closetSummary }: { closetSummary: ClosetSummary }) {
       )}
       <ProductDetailSheet
         result={selectedResult}
+        sizeRec={
+          selectedResult ? recommendSize(sizeProfile, selectedResult.brand, selectedResult.name) : null
+        }
         onClose={() => setSelectedResult(null)}
       />
     </div>

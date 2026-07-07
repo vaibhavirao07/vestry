@@ -1,14 +1,17 @@
 'use client'
 
 import Image from 'next/image'
+import { badgeLabel } from '@/lib/sizes'
 import type { ShopResult } from '@/types/shop'
+import type { SizeRecommendation } from '@/types/profile'
 
 type Props = {
   result: ShopResult
+  sizeRec: SizeRecommendation | null
   onTap: (result: ShopResult) => void
 }
 
-export function ShopResultCard({ result, onTap }: Props) {
+export function ShopResultCard({ result, sizeRec, onTap }: Props) {
   return (
     <button
       onClick={() => {
@@ -35,6 +38,11 @@ export function ShopResultCard({ result, onTap }: Props) {
         <span className="absolute top-1.5 right-1.5 bg-accent text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-tight">
           {result.compatibility_score}%
         </span>
+        {sizeRec && (
+          <span className="absolute bottom-1.5 left-1.5 bg-white/90 text-ink text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-tight border border-ink/8">
+            {badgeLabel(sizeRec)}
+          </span>
+        )}
       </div>
 
       <div className="px-2 py-1.5 flex flex-col gap-0.5">

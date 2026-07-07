@@ -1,7 +1,7 @@
 # Vestry — Status
 
 ## Current milestone
-Phase 2 in progress — Smart Shop (Module 9) + Platform Comparison (Module 7) complete.
+Phase 2 in progress — Smart Shop (Module 9), Platform Comparison (Module 7) and Size Intelligence (Module 8) complete.
 
 ## Phase 1 — Done
 - Supabase schema (6 tables, RLS, trigger, 3 views, trend seeds) ✓
@@ -20,16 +20,22 @@ Phase 2 in progress — Smart Shop (Module 9) + Platform Comparison (Module 7) c
 ### Completed
 - **Smart Shop (Module 9)** — natural language search, Claude Haiku intent parse + scoring, Channel3 product grid, 5-col Pinterest layout, compatibility % badge, est. cost-per-wear ✓
 - **Platform Comparison (Module 7)** — tap card opens detail sheet; Where to Buy list (up to 5 offers sorted by price); Best price / Fastest / Best returns badges; static merchant lookup for 18 US + UAE retailers; single-offer products open direct URL ✓
+- **Size Intelligence (Module 8)** — `/profile` screen (measurements with unit toggle + known brand sizes per garment); pure-logic size engine (universal ladder + per-brand fit offsets for 27 brands, no AI); size badge on Smart Shop cards; "Your Size" recommendation with reasoning in the detail sheet ✓
 
 ### Planned (not started)
-- **Size intelligence** — track what sizes fit across brands; surface sizing notes on search results
 - **Consumer psychology** — impulse-buy guardrails, cost-per-wear projections before purchase (revise with image-based similarity in Phase 3)
 - **Inspo module** — save outfit inspiration images; match to items already in closet
 
 ## Must fix before shipping
+0. **Run migration 002** — `supabase/migrations/002_profiles.sql` must be run in the Supabase SQL editor or the `/profile` screen and size recommendations return nothing.
 1. **Auth redirect bug** — `proxy.ts` redirect is commented out; re-enable auth gate and remove all TEMPORARY bypass comments from page.tsx files and hooks.
 2. **Channel3 multi-offer** — most products return only 1 offer from Channel3, so Platform Comparison rarely activates. Check Channel3 docs for a parameter to request multiple retailer offers per product.
 3. **Consumer psychology nudges** — removed after false-positive issues with text-based style similarity. Revisit in Phase 3 with image embeddings.
+
+## Session notes (2026-07-06)
+- Built Size Intelligence on `feat/size-intelligence`: migration 002 (`profiles` + `brand_sizes`), `lib/sizeCharts.ts` (7-step ladder + 27 brand fit entries), `lib/sizes.ts` (direct → cross-brand → measurements recommendation cascade), `/profile` screen with unit toggle, ProfileLink icon in all 5 headers, size badge + "Your Size" sheet section in Smart Shop
+- Engine verified with a script: direct match, runs-small/large conversions (tops + shoes half-sizes), waist-based bottoms, unknown-brand fallback, empty profile → no badge
+- Measurements stored in inches/lbs; cm/kg is a display-only toggle
 
 ## Session notes (2026-07-01)
 - Built Smart Shop: `/shop` route, Claude Haiku 2-step pipeline (intent parse → Channel3 → compatibility scoring), 5-col product grid, `lib/claude.ts` wrapper, `types/shop.ts`

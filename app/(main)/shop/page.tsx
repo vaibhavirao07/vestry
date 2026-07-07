@@ -1,11 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { ShopView } from '@/components/shop/ShopView'
+import { ProfileLink } from '@/components/ui/ProfileLink'
 import type { ClosetSummary } from '@/types/shop'
+import type { Garment, SizeProfile } from '@/types/profile'
 
 export default async function ShopPage() {
   const supabase = await createClient()
   // TEMPORARY — DO NOT SHIP: no auth redirect; queries return empty without a session.
-  const [{ data: items }, { data: gaps }, { data: categories }] = await Promise.all([
+  const [{ data: items }, { data: gaps }, { data: categories }, { data: profile }, { data: brandSizes }] = await Promise.all([
     supabase
       .from('item_stats')
       .select('name, colour, times_worn, cost_per_wear, category_id')
@@ -16,6 +18,8 @@ export default async function ShopPage() {
       .order('gap_score', { ascending: false })
       .limit(5),
     supabase.from('categories').select('id, name'),
+    supabase.from('profiles').select('*').maybeSingle(),
+    supabase.from('brand_sizes').select('brand, garment, size'),
   ])
 
   const catMap = Object.fromEntries((categories ?? []).map((c) => [c.id, c.name]))
@@ -40,13 +44,32 @@ export default async function ShopPage() {
     avgCostPerWear,
   }
 
+  const sizeProfile: SizeProfile = {
+    measurements: {
+      height: profile?.height ?? null,
+      weight: profile?.weight ?? null,
+      bust: profile?.bust ?? null,
+      waist: profile?.waist ?? null,
+      hips: profile?.hips ?? null,
+      shoe_size: profile?.shoe_size ?? null,
+    },
+    brandSizes: (brandSizes ?? []).map((bs) => ({
+      brand: bs.brand,
+      garment: bs.garment as Garment,
+      size: bs.size,
+    })),
+  }
+
   return (
     <div className="flex flex-col h-full">
-      <header className="px-4 pt-12 pb-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Smart Shop</h1>
-        <p className="text-sm text-ink/50 mt-1">Find pieces that work with what you own</p>
+      <header className="px-4 pt-12 pb-4 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Smart Shop</h1>
+          <p className="text-sm text-ink/50 mt-1">Find pieces that work with what you own</p>
+        </div>
+        <ProfileLink />
       </header>
-      <ShopView closetSummary={closetSummary} />
+      <ShopView closetSummary={closetSummary} sizeProfile={sizeProfile} />
     </div>
   )
 }

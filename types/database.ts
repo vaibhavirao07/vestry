@@ -135,6 +135,66 @@ export interface Database {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          user_id: string
+          height: number | null
+          weight: number | null
+          bust: number | null
+          waist: number | null
+          hips: number | null
+          shoe_size: number | null
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          height?: number | null
+          weight?: number | null
+          bust?: number | null
+          waist?: number | null
+          hips?: number | null
+          shoe_size?: number | null
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          height?: number | null
+          weight?: number | null
+          bust?: number | null
+          waist?: number | null
+          hips?: number | null
+          shoe_size?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      brand_sizes: {
+        Row: {
+          id: string
+          user_id: string
+          brand: string
+          garment: string
+          size: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          brand: string
+          garment?: string
+          size: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          brand?: string
+          garment?: string
+          size?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       trends: {
         Row: {
           id: string
@@ -222,6 +282,8 @@ export type Outfit     = Database['public']['Tables']['outfits']['Row']
 export type OutfitItem = Database['public']['Tables']['outfit_items']['Row']
 export type WearLog    = Database['public']['Tables']['wear_logs']['Row']
 export type Trend      = Database['public']['Tables']['trends']['Row']
+export type Profile    = Database['public']['Tables']['profiles']['Row']
+export type BrandSize  = Database['public']['Tables']['brand_sizes']['Row']
 export type ItemStats  = Database['public']['Views']['item_stats']['Row']
 export type OutfitStats = Database['public']['Views']['outfit_stats']['Row']
 export type GapAnalysis = Database['public']['Views']['gap_analysis']['Row']
