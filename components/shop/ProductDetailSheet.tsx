@@ -36,7 +36,6 @@ export function ProductDetailSheet({ result, sizeRec, onClose }: Props) {
   if (!result) return null
 
   const { offers, outfit_preview, compatibility_score, estimated_cpw } = result
-  const hasComparison = offers.length >= 2
   const { bestPriceDomain, bestReturnsDomain, fastestDomain } = computeBadges(offers)
 
   return (
@@ -129,7 +128,7 @@ export function ProductDetailSheet({ result, sizeRec, onClose }: Props) {
               Where to Buy
             </p>
 
-            {hasComparison ? (
+            {offers.length > 0 ? (
               <div>
                 {offers.map((offer) => (
                   <PlatformRow
@@ -144,7 +143,7 @@ export function ProductDetailSheet({ result, sizeRec, onClose }: Props) {
                 ))}
               </div>
             ) : (
-              // Fewer than 2 platforms — skip comparison, show direct buy
+              // No offer data — direct buy via the product's source URL
               <a
                 href={result.source_url}
                 target="_blank"

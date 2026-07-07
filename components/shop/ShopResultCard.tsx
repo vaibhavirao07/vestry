@@ -14,13 +14,7 @@ type Props = {
 export function ShopResultCard({ result, sizeRec, onTap }: Props) {
   return (
     <button
-      onClick={() => {
-        if (result.offers.length >= 2) {
-          onTap(result)
-        } else {
-          window.open(result.source_url, '_blank', 'noopener,noreferrer')
-        }
-      }}
+      onClick={() => onTap(result)}
       className="bg-white rounded-xl border border-ink/8 overflow-hidden flex flex-col text-left w-full active:opacity-70"
     >
       <div className="relative aspect-square overflow-hidden bg-stone-100">
