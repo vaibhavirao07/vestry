@@ -26,18 +26,13 @@ export async function proxy(request: NextRequest) {
   // Refresh session — required for SSR auth to stay in sync
   await supabase.auth.getUser()
 
-  // ─── TEMPORARY — DO NOT SHIP ──────────────────────────────────────────────
-  // Auth gate disabled so features can be built and tested without a session.
-  // To re-enable: uncomment the block below and delete this comment.
-  //
-  // const { data: { user } } = await supabase.auth.getUser()
-  // const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
-  // if (!user && !isAuthRoute) {
-  //   const url = request.nextUrl.clone()
-  //   url.pathname = '/auth/login'
-  //   return NextResponse.redirect(url)
-  // }
-  // ──────────────────────────────────────────────────────────────────────────
+  const { data: { user } } = await supabase.auth.getUser()
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
+  if (!user && !isAuthRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
