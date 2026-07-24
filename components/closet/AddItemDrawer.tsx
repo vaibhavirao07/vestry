@@ -13,9 +13,10 @@ interface Props {
   onClose: () => void
   categories: Category[]
   onItemAdded: (item: ItemStats) => void
+  editingItem?: ItemStats | null
 }
 
-export function AddItemDrawer({ open, onClose, categories, onItemAdded }: Props) {
+export function AddItemDrawer({ open, onClose, categories, onItemAdded, editingItem }: Props) {
   const [step, setStep] = useState<Step>('search')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -23,7 +24,7 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded }: Props)
   const [prefill, setPrefill] = useState<Partial<ItemFormData> | undefined>()
   const { addItem, isLoading } = useAddItem()
 
-  // Reset to search step whenever drawer closes
+  // Handle opening/closing and edit mode
   useEffect(() => {
     if (!open) {
       setTimeout(() => {
@@ -32,8 +33,20 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded }: Props)
         setResults([])
         setPrefill(undefined)
       }, 300)
+    } else if (editingItem) {
+      // Pre-fill form with existing item data
+      setPrefill({
+        name: editingItem.name,
+        brand: editingItem.brand ?? '',
+        colour: editingItem.colour ?? '',
+        image_url: editingItem.image_url ?? '',
+        price: editingItem.price != null ? String(editingItem.price) : '',
+        category_id: editingItem.category_id,
+        notes: '',
+      })
+      setStep('form')
     }
-  }, [open])
+  }, [open, editingItem])
 
   // Debounced search
   useEffect(() => {
@@ -65,24 +78,53 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded }: Props)
   }
 
   async function handleFormSubmit(data: ItemFormData) {
-    const item = await addItem(data)
-    if (!item) return
+    if (editingItem) {
+      // Update existing item
+      const res = await fetch(`/api/items/${editingItem.item_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) return
 
-    const optimistic: ItemStats = {
-      item_id: item.id,
-      user_id: item.user_id,
-      name: item.name,
-      brand: item.brand,
-      colour: item.colour,
-      price: item.price,
-      category_id: item.category_id,
-      image_url: item.image_url,
-      versatility_score: 0,
-      times_worn: 0,
-      cost_per_wear: null,
+      const updated = await res.json()
+      const optimistic: ItemStats = {
+        item_id: updated.id,
+        user_id: updated.user_id,
+        name: updated.name,
+        brand: updated.brand,
+        colour: updated.colour,
+        price: updated.price,
+        category_id: updated.category_id,
+        image_url: updated.image_url,
+        versatility_score: editingItem.versatility_score,
+        times_worn: editingItem.times_worn,
+        cost_per_wear: editingItem.cost_per_wear,
+        category_name: editingItem.category_name,
+      }
+      onItemAdded(optimistic)
+      onClose()
+    } else {
+      // Add new item
+      const item = await addItem(data)
+      if (!item) return
+
+      const optimistic: ItemStats = {
+        item_id: item.id,
+        user_id: item.user_id,
+        name: item.name,
+        brand: item.brand,
+        colour: item.colour,
+        price: item.price,
+        category_id: item.category_id,
+        image_url: item.image_url,
+        versatility_score: 0,
+        times_worn: 0,
+        cost_per_wear: null,
+      }
+      onItemAdded(optimistic)
+      onClose()
     }
-    onItemAdded(optimistic)
-    onClose()
   }
 
   return (
@@ -108,7 +150,7 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded }: Props)
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 shrink-0">
-          {step === 'form' ? (
+          {step === 'form' && !editingItem ? (
             <button
               onClick={() => setStep('search')}
               className="flex items-center gap-1 text-sm font-medium text-ink/60"
@@ -119,7 +161,7 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded }: Props)
               Back
             </button>
           ) : (
-            <h2 className="text-base font-semibold text-ink">Add item</h2>
+            <h2 className="text-base font-semibold text-ink">{editingItem ? 'Edit item' : 'Add item'}</h2>
           )}
           <button onClick={onClose} className="p-1 text-ink/40 hover:text-ink transition-colors">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
@@ -213,6 +255,7 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded }: Props)
               categories={categories}
               onSubmit={handleFormSubmit}
               isLoading={isLoading}
+              isEditing={!!editingItem}
             />
           )}
         </div>

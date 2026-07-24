@@ -6,9 +6,17 @@ function formatCostPerWear(cpw: number | null): string {
   return `$${cpw.toFixed(2)}/wear`
 }
 
-export function ItemCard({ item }: { item: ItemStats }) {
+interface ItemCardProps {
+  item: ItemStats
+  onTap?: (item: ItemStats) => void
+}
+
+export function ItemCard({ item, onTap }: ItemCardProps) {
   return (
-    <div className="flex flex-col rounded-2xl overflow-hidden bg-white border border-ink/8">
+    <div
+      onClick={() => onTap?.(item)}
+      className="flex flex-col rounded-2xl overflow-hidden bg-white border border-ink/8 cursor-pointer hover:shadow-md transition-shadow"
+    >
       <div className="aspect-square relative bg-accent/8">
         {item.image_url ? (
           <Image

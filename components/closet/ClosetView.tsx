@@ -5,6 +5,7 @@ import type { Category, ItemStats } from '@/types/database'
 import { CategoryFilter } from './CategoryFilter'
 import { ItemCard } from './ItemCard'
 import { AddItemDrawer } from './AddItemDrawer'
+import { ItemDetailSheet } from './ItemDetailSheet'
 
 interface Props {
   initialItems: ItemStats[]
@@ -15,6 +16,8 @@ export function ClosetView({ initialItems, categories }: Props) {
   const [items, setItems] = useState(initialItems)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<ItemStats | null>(null)
+  const [editingItem, setEditingItem] = useState<ItemStats | null>(null)
 
   const filtered = activeCategory
     ? items.filter((i) => i.category_id === activeCategory)
@@ -22,6 +25,23 @@ export function ClosetView({ initialItems, categories }: Props) {
 
   function handleItemAdded(item: ItemStats) {
     setItems((prev) => [item, ...prev])
+  }
+
+  async function handleDelete(item: ItemStats) {
+    try {
+      const res = await fetch(`/api/items/${item.item_id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setItems((prev) => prev.filter((i) => i.item_id !== item.item_id))
+        setSelectedItem(null)
+      }
+    } catch (err) {
+      console.error('Failed to delete item:', err)
+    }
+  }
+
+  function handleEdit(item: ItemStats) {
+    setEditingItem(item)
+    setDrawerOpen(true)
   }
 
   return (
@@ -41,7 +61,7 @@ export function ClosetView({ initialItems, categories }: Props) {
         ) : (
           <div className="grid grid-cols-6 gap-2">
             {filtered.map((item) => (
-              <ItemCard key={item.item_id} item={item} />
+              <ItemCard key={item.item_id} item={item} onTap={setSelectedItem} />
             ))}
           </div>
         )}
@@ -60,9 +80,20 @@ export function ClosetView({ initialItems, categories }: Props) {
 
       <AddItemDrawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={() => {
+          setDrawerOpen(false)
+          setEditingItem(null)
+        }}
         categories={categories}
         onItemAdded={handleItemAdded}
+        editingItem={editingItem}
+      />
+
+      <ItemDetailSheet
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </div>
   )

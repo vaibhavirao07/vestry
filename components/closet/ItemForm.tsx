@@ -24,9 +24,10 @@ interface Props {
   categories: Category[]
   onSubmit: (data: ItemFormData) => void
   isLoading?: boolean
+  isEditing?: boolean
 }
 
-export function ItemForm({ prefill, categories, onSubmit, isLoading }: Props) {
+export function ItemForm({ prefill, categories, onSubmit, isLoading, isEditing }: Props) {
   const [form, setForm] = useState<ItemFormData>({ ...empty, ...prefill })
 
   function set(field: keyof ItemFormData, value: string) {
@@ -121,7 +122,7 @@ export function ItemForm({ prefill, categories, onSubmit, isLoading }: Props) {
         disabled={!form.name.trim() || isLoading}
         className="mt-2 w-full rounded-full bg-accent py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
       >
-        {isLoading ? 'Saving…' : 'Save item'}
+        {isLoading ? 'Saving…' : isEditing ? 'Update item' : 'Save item'}
       </button>
     </form>
   )
