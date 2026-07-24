@@ -28,7 +28,7 @@ export async function GET(request: Request) {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
       },
-      body: JSON.stringify({ query: q, limit: 8 }),
+      body: JSON.stringify({ query: q, limit: 20 }),
       next: { revalidate: 60 },
     })
 
@@ -36,33 +36,41 @@ export async function GET(request: Request) {
 
     const data = await res.json()
 
+    // Filter results with suspiciously low prices (likely bad data)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results: SearchResult[] = (data.products ?? []).slice(0, 8).map((r: any) => {
-      // brands is an array — grab the first one
-      const brand: string | null = r.brands?.[0]?.name ?? null
+    const results: SearchResult[] = (data.products ?? [])
+      .filter((r: any) => {
+        const price = r.offers?.[0]?.price?.price
+        // Keep if no price, or if price >= $5 (reasonable minimum for most items)
+        return !price || price >= 5
+      })
+      .slice(0, 20)
+      .map((r: any) => {
+        // brands is an array — grab the first one
+        const brand: string | null = r.brands?.[0]?.name ?? null
 
-      // prefer is_cleaned_image (white bg), then is_main_image, then first image
-      const images: any[] = r.images ?? []
-      const image =
-        images.find((i) => i.is_cleaned_image)?.url ??
-        images.find((i) => i.is_main_image)?.url ??
-        images[0]?.url ??
-        null
+        // prefer is_cleaned_image (white bg), then is_main_image, then first image
+        const images: any[] = r.images ?? []
+        const image =
+          images.find((i) => i.is_cleaned_image)?.url ??
+          images.find((i) => i.is_main_image)?.url ??
+          images[0]?.url ??
+          null
 
-      // price is already a number inside offers[0].price.price
-      const price: number | null = r.offers?.[0]?.price?.price ?? null
+        // price is already a number inside offers[0].price.price
+        const price: number | null = r.offers?.[0]?.price?.price ?? null
 
-      // buy link includes Channel3 affiliate tracking
-      const source_url: string = r.offers?.[0]?.url ?? ''
+        // buy link includes Channel3 affiliate tracking
+        const source_url: string = r.offers?.[0]?.url ?? ''
 
-      return {
-        name: r.title ?? '',
-        brand,
-        image_url: image,
-        source_url,
-        price,
-      }
-    })
+        return {
+          name: r.title ?? '',
+          brand,
+          image_url: image,
+          source_url,
+          price,
+        }
+      })
 
     return NextResponse.json({ results })
   } catch {

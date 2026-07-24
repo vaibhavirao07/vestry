@@ -224,9 +224,9 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded, editingI
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ink truncate">{r.name}</p>
                           {r.brand && <p className="text-xs text-ink/50">{r.brand}</p>}
-                          {r.price != null && (
-                            <p className="text-xs text-accent font-medium">${r.price.toFixed(2)}</p>
-                          )}
+                          <p className="text-xs text-accent font-medium">
+                            {r.price != null ? `$${r.price.toFixed(2)}` : 'No price available'}
+                          </p>
                         </div>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4 text-ink/30 shrink-0">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
