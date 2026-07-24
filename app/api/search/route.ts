@@ -8,6 +8,61 @@ export type SearchResult = {
   price: number | null
 }
 
+const KNOWN_BRANDS = new Set([
+  'cotton on',
+  'zara',
+  'h&m',
+  'uniqlo',
+  'mango',
+  'asos',
+  'forever 21',
+  'topshop',
+  'revolve',
+  'free people',
+  'anthropologie',
+  'urban outfitters',
+  "levi's",
+  'nike',
+  'adidas',
+  'new balance',
+  'veja',
+  'madewell',
+  'reformation',
+  '& other stories',
+  'cos',
+  'arket',
+])
+
+function detectAndRestructureQuery(query: string): string {
+  const words = query.toLowerCase().split(/\s+/)
+
+  // Check if first 1-2 words match a known brand
+  const firstWord = words[0]
+  const twoWords = `${words[0]} ${words[1]}`.trim()
+
+  let detectedBrand: string | null = null
+  let wordsToRemove = 0
+
+  if (KNOWN_BRANDS.has(twoWords) && words.length > 2) {
+    detectedBrand = twoWords
+    wordsToRemove = 2
+  } else if (KNOWN_BRANDS.has(firstWord)) {
+    detectedBrand = firstWord
+    wordsToRemove = 1
+  }
+
+  if (detectedBrand) {
+    // Restructure: brand first, then rest of query, then "women"
+    const restOfQuery = words.slice(wordsToRemove).join(' ')
+    // Capitalize brand for better matching
+    const capitalizedBrand = detectedBrand.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    return `${capitalizedBrand} ${restOfQuery} women`.trim()
+  }
+
+  // No brand detected, return original query
+  return query
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const q = searchParams.get('q')?.trim()
@@ -15,6 +70,8 @@ export async function GET(request: Request) {
   if (!q || q.length < 2) {
     return NextResponse.json({ results: [] })
   }
+
+  const restructuredQuery = detectAndRestructureQuery(q)
 
   const apiKey = process.env.CHANNEL3_API_KEY
   if (!apiKey) {
@@ -28,7 +85,7 @@ export async function GET(request: Request) {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
       },
-      body: JSON.stringify({ query: q, limit: 20 }),
+      body: JSON.stringify({ query: restructuredQuery, limit: 20 }),
       next: { revalidate: 60 },
     })
 
