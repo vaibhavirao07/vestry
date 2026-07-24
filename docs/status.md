@@ -28,9 +28,17 @@ Phase 2 feature-complete — Smart Shop (9), Platform Comparison (7), Size Intel
 
 ## Must fix before shipping
 0. **Run migrations 002 + 003** — `supabase/migrations/002_profiles.sql` and `003_inspo.sql` must be run in the Supabase SQL editor (003 also creates the `inspo` storage bucket) or /profile, size recommendations and Inspo saving return nothing.
-1. **Auth redirect bug** — `proxy.ts` redirect is commented out; re-enable auth gate and remove all TEMPORARY bypass comments from page.tsx files and hooks.
-2. **Channel3 multi-offer** — most products return only 1 offer from Channel3, so Platform Comparison rarely activates. Check Channel3 docs for a parameter to request multiple retailer offers per product.
-3. **Consumer psychology nudges** — removed after false-positive issues with text-based style similarity. Revisit in Phase 3 with image embeddings.
+1. **Channel3 multi-offer** — most products return only 1 offer from Channel3, so Platform Comparison rarely activates. Check Channel3 docs for a parameter to request multiple retailer offers per product.
+2. **Consumer psychology nudges** — removed after false-positive issues with text-based style similarity. Revisit in Phase 3 with image embeddings.
+
+## Session notes (2026-07-23)
+- Fixed auth system: enabled proxy.ts auth gate, fixed Tailwind CSS font variable issue in @theme inline, fixed static assets exclusion from auth redirect
+- Added sign out button to `/profile` screen (destructive red style, calls supabase.auth.signOut() and redirects to /auth/login)
+- Closet UX improvements: grid changed from 2-col to 6-col with compact square cards (image + 1-line name/brand), gap reduced for tighter spacing
+- Built closet item detail sheet: tap item card → bottom sheet with image/name/brand/category, cost per wear, times worn count, outfit list (lazy-loaded from API), Edit button (opens drawer pre-filled), Delete button (browser confirm dialog)
+- Search quality fixes: increased results from 8 to 20, filter out suspiciously low prices (<$5), show "No price available" label instead of blank
+- Brand detection in search: detect first 1-2 words as known brand, restructure query to prioritize brand (e.g., "cotton on ribbed pink" → "Cotton On ribbed pink women") to improve Channel3 matching; 22 brands supported
+- All work merged to main and pushed
 
 ## Session notes (2026-07-06, later)
 - Built Inspo on `feat/inspo`: migration 003 (`inspo_posts` + `inspo` storage bucket), `/api/inspo` (URL resolve → Haiku vision → strict closet match), mood board UI (grid, add drawer, detail sheet), 6th nav tab, `/shop?q=` deep-link

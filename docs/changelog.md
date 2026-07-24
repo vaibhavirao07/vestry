@@ -1,5 +1,25 @@
 # Vestry — Changelog
 
+## [Unreleased] — Auth + Closet UX improvements (2026-07-23)
+
+### Fixed
+- `proxy.ts` — enabled auth gate (unauthenticated users redirected to `/auth/login`), fixed static assets exclusion from auth redirect (prevents HTML being returned for JS chunks)
+- `app/globals.css` — fixed Tailwind v4 `@theme inline` font issue (changed from `var(--font-geist-sans)` to literal font name, since @theme inline runs at build time and cannot resolve runtime CSS variables)
+- `app/api/search/route.ts` — increased search results from 8 to 20, filter out suspiciously low prices (<$5 likely bad data), detect brand names in first 1-2 words and restructure query to prioritize them for better Channel3 matching (22 brands: Cotton On, Zara, H&M, etc.)
+
+### Added
+- `/profile` page — sign out button (destructive red style, bottom of page, calls supabase.auth.signOut() and redirects to /auth/login)
+- `components/closet/ItemDetailSheet.tsx` — bottom sheet detail view for closet items: image, name, brand, category, cost per wear, times worn, outfit list (lazy-loaded), Edit button (opens drawer pre-filled), Delete button (browser confirm dialog)
+- `app/api/items/[itemId]/outfits/route.ts` — GET outfit names for an item
+- `app/api/items/[itemId]/route.ts` — PATCH to update item, DELETE to delete item
+
+### Changed
+- Closet grid: 2 columns → 6 columns, gap reduced (3 → 2) for compact layout
+- ItemCard: reduced padding (p-3 → p-2), smaller text sizes (xs), removed cost-per-wear line, added cursor-pointer and hover:shadow-md
+- AddItemDrawer: accept `editingItem` prop, pre-fill form when editing, show "Edit item" title and "Update item" button in edit mode, skip search step when editing, handle both add and update in submit handler
+- ItemForm: added `isEditing` prop, show "Update item" vs "Save item" button text
+- AddItemDrawer search results: show "No price available" label for items without price instead of blank
+
 ## [Unreleased] — feat/inspo
 
 ### Added
