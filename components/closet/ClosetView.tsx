@@ -39,7 +39,7 @@ export function ClosetView({ initialItems, categories }: Props) {
             onAdd={() => setDrawerOpen(true)}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-6 gap-2">
             {filtered.map((item) => (
               <ItemCard key={item.item_id} item={item} />
             ))}

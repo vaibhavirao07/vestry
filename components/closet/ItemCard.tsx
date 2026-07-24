@@ -16,7 +16,7 @@ export function ItemCard({ item }: { item: ItemStats }) {
             alt={item.name}
             fill
             className="object-cover"
-            sizes="(max-width: 640px) 50vw, 33vw"
+            sizes="(max-width: 768px) 33vw, 16vw"
             unoptimized
           />
         ) : (
@@ -43,14 +43,11 @@ export function ItemCard({ item }: { item: ItemStats }) {
         )}
       </div>
 
-      <div className="p-3 flex flex-col gap-0.5">
-        <p className="text-sm font-semibold text-ink leading-tight truncate">{item.name}</p>
+      <div className="p-2 flex flex-col gap-0.5">
+        <p className="text-xs font-semibold text-ink leading-tight truncate">{item.name}</p>
         {item.brand && (
-          <p className="text-xs text-ink/50 truncate">{item.brand}</p>
+          <p className="text-[10px] text-ink/40 truncate">{item.brand}</p>
         )}
-        <p className="mt-1 text-xs font-medium text-accent">
-          {formatCostPerWear(item.cost_per_wear)}
-        </p>
       </div>
     </div>
   )
