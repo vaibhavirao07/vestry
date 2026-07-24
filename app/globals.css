@@ -10,7 +10,7 @@
   --color-surface: #FAFAF8;
   --color-accent:  #7C5CBF;
   --color-ink:     #1A1A2E;
-  --font-sans: var(--font-geist-sans);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
