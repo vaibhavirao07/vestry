@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useProfile, type MeasurementsInput } from '@/hooks/useProfile'
+import { createClient } from '@/lib/supabase/client'
 import { BRAND_FITS } from '@/lib/sizeCharts'
 import type { BrandSize, Profile } from '@/types/database'
 import type { Garment } from '@/types/profile'
@@ -59,6 +61,7 @@ export function ProfileView({
   initialProfile: Profile | null
   initialBrandSizes: BrandSize[]
 }) {
+  const router = useRouter()
   const [unit, setUnit] = useState<Unit>('imperial')
   const [form, setForm] = useState<FormState>(() => toForm(initialProfile, 'imperial'))
   const [saved, setSaved] = useState(false)
@@ -66,7 +69,15 @@ export function ProfileView({
   const [newBrand, setNewBrand] = useState('')
   const [newGarment, setNewGarment] = useState<Garment>('tops')
   const [newSize, setNewSize] = useState('')
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const { saveMeasurements, addBrandSize, removeBrandSize, isSaving, error } = useProfile()
+
+  async function handleSignOut() {
+    setIsSigningOut(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/auth/login')
+  }
 
   function switchUnit(next: Unit) {
     if (next === unit) return
@@ -239,6 +250,15 @@ export function ProfileView({
       </section>
 
       {error && <p className="text-xs text-red-500">{error}</p>}
+
+      {/* Sign out */}
+      <button
+        onClick={handleSignOut}
+        disabled={isSigningOut}
+        className="w-full bg-red-50 border border-red-100 text-red-600 rounded-xl py-3 text-sm font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
+      >
+        {isSigningOut ? 'Signing out…' : 'Sign out'}
+      </button>
     </div>
   )
 }
