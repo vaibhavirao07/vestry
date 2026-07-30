@@ -2,29 +2,34 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import type { OutfitStats, ItemStats } from '@/types/database'
+import type { OutfitStats, ItemStats, Category } from '@/types/database'
+import { MoodBoardCollage } from './MoodBoardCollage'
+import { DayPickerSheet } from './DayPickerSheet'
 
 type Props = {
   open: boolean
   onClose: () => void
-  outfit: OutfitStats
+  outfit: OutfitStats & { items: ItemStats[] }
+  categories: Category[]
+  allItems: ItemStats[]
+  onOutfitUpdated: (outfit: OutfitStats & { items: ItemStats[] }) => void
   onOutfitDeleted: () => void
 }
 
-export function OutfitDaySheet({ open, onClose, outfit, onOutfitDeleted }: Props) {
-  const [items, setItems] = useState<ItemStats[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+export function OutfitDaySheet({
+  open,
+  onClose,
+  outfit,
+  categories,
+  allItems,
+  onOutfitUpdated,
+  onOutfitDeleted,
+}: Props) {
+  const [editSheetOpen, setEditSheetOpen] = useState(false)
 
-  // Fetch outfit items on open
-  if (open && isLoading) {
-    fetch(`/api/outfits/${outfit.outfit_id}/items`)
-      .then(res => res.json())
-      .then(data => {
-        setItems(data.items || [])
-        setIsLoading(false)
-      })
-      .catch(() => setIsLoading(false))
-  }
+  const dateStr = outfit.worn_date
+    ? new Date(outfit.worn_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'Unknown date'
 
   async function handleDelete() {
     if (!confirm('Delete this outfit?')) return
@@ -35,9 +40,18 @@ export function OutfitDaySheet({ open, onClose, outfit, onOutfitDeleted }: Props
     }
   }
 
-  const dateStr = outfit.worn_date
-    ? new Date(outfit.worn_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'Unknown date'
+  async function handleSaveEdit(itemIds: string[]) {
+    const res = await fetch(`/api/outfits/${outfit.outfit_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selectedItemIds: itemIds }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      onOutfitUpdated(updated)
+      setEditSheetOpen(false)
+    }
+  }
 
   return (
     <>
@@ -72,53 +86,45 @@ export function OutfitDaySheet({ open, onClose, outfit, onOutfitDeleted }: Props
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 pb-20">
-          {/* Photo */}
-          {outfit.photo_url && (
-            <div className="w-full rounded-xl overflow-hidden bg-ink/5 mb-4">
-              <img src={outfit.photo_url} alt="Outfit" className="w-full h-auto" />
-            </div>
-          )}
+          {/* Collage */}
+          <div className="mb-6">
+            <MoodBoardCollage items={outfit.items} size="fullscreen" />
+          </div>
 
-          {/* Pieces */}
+          {/* Items list */}
           <div>
-            <h3 className="text-sm font-semibold text-ink mb-3">Pieces worn</h3>
-            {isLoading ? (
-              <p className="text-sm text-ink/40">Loading…</p>
-            ) : items.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {items.map(item => (
-                  <div key={item.item_id} className="bg-white rounded-lg p-3 border border-ink/8 flex gap-3">
-                    {item.image_url && (
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-ink/5 shrink-0">
-                        <Image
-                          src={item.image_url}
-                          alt={item.name}
-                          width={48}
-                          height={48}
-                          className="w-full h-full object-cover"
-                          unoptimized
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ink">{item.name}</p>
-                      {item.brand && (
-                        <p className="text-xs text-ink/50">{item.brand}</p>
-                      )}
+            <h3 className="text-sm font-semibold text-ink mb-3">Pieces ({outfit.items.length})</h3>
+            <div className="flex flex-col gap-2">
+              {outfit.items.map(item => (
+                <div key={item.item_id} className="bg-white rounded-lg p-3 border border-ink/8 flex gap-3">
+                  {item.image_url && (
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-ink/5 shrink-0">
+                      <Image
+                        src={item.image_url}
+                        alt={item.name}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                      />
                     </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-ink">{item.name}</p>
+                    {item.brand && (
+                      <p className="text-xs text-ink/50">{item.brand}</p>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-ink/40">No items logged for this outfit</p>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Actions */}
         <div className="border-t border-ink/8 px-4 py-4 flex flex-col gap-2">
           <button
-            onClick={() => {/* TODO: edit pieces */}}
+            onClick={() => setEditSheetOpen(true)}
             className="w-full rounded-full py-3 text-sm font-semibold transition-all
               bg-ink/5 text-ink hover:bg-ink/10"
           >
@@ -133,6 +139,18 @@ export function OutfitDaySheet({ open, onClose, outfit, onOutfitDeleted }: Props
           </button>
         </div>
       </div>
+
+      {/* Edit picker sheet */}
+      <DayPickerSheet
+        open={editSheetOpen}
+        onClose={() => setEditSheetOpen(false)}
+        selectedDate={outfit.worn_date ? new Date(outfit.worn_date) : null}
+        categories={categories}
+        allItems={allItems}
+        onSave={handleSaveEdit}
+        editingOutfitId={outfit.outfit_id}
+        existingItemIds={outfit.items.map(i => i.item_id)}
+      />
     </>
   )
 }

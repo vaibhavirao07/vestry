@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { v4 as uuid } from 'uuid'
 
 export async function GET(request: Request) {
   const { searchParams: params } = new URL(request.url)
@@ -28,13 +27,20 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from('outfits')
-    .select('*')
+    .select('*, outfit_items(items(*))')
     .eq('user_id', user.id)
     .gte('worn_date', startDate)
     .lte('worn_date', endDateStr)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ outfits: data })
+
+  const outfits = data?.map(o => ({
+    ...o,
+    items: o.outfit_items?.map((oi: any) => oi.items).filter(Boolean) || [],
+    outfit_items: undefined,
+  })) || []
+
+  return NextResponse.json({ outfits })
 }
 
 export async function POST(request: Request) {
@@ -49,23 +55,10 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { wornDate, photoBase64, pieces } = body
+  const { wornDate, selectedItemIds } = body
 
-  // Upload photo to Supabase Storage
-  let photoUrl: string | null = null
-  if (photoBase64) {
-    const buffer = Buffer.from(photoBase64.split(',')[1], 'base64')
-    const filename = `${user.id}/${uuid()}.jpg`
-    const { error: uploadError } = await supabase.storage
-      .from('outfit-photos')
-      .upload(filename, buffer, { contentType: 'image/jpeg', upsert: false })
-
-    if (!uploadError) {
-      const { data: publicUrl } = supabase.storage
-        .from('outfit-photos')
-        .getPublicUrl(filename)
-      photoUrl = publicUrl.publicUrl
-    }
+  if (!selectedItemIds || selectedItemIds.length === 0) {
+    return NextResponse.json({ error: 'selectedItemIds required' }, { status: 400 })
   }
 
   // Auto-generate outfit name from date
@@ -79,25 +72,42 @@ export async function POST(request: Request) {
       user_id: user.id,
       name: outfitName,
       worn_date: wornDate,
-      photo_url: photoUrl,
     })
     .select()
     .single()
 
   if (outfitError) return NextResponse.json({ error: outfitError.message }, { status: 500 })
 
-  // Match pieces and create wear logs
-  const matchedItemIds = pieces
-    .filter((p: any) => p.matched && p.closetItemId)
-    .map((p: any) => p.closetItemId)
+  // Link items to outfit and create wear logs
+  const outfitItems = selectedItemIds.map((itemId: string) => ({
+    outfit_id: outfit.id,
+    item_id: itemId,
+  }))
 
-  for (const itemId of matchedItemIds) {
-    await supabase.from('wear_logs').insert({
-      outfit_id: outfit.id,
-      user_id: user.id,
-      worn_on: wornDate,
-    })
+  const { error: itemsError } = await supabase.from('outfit_items').insert(outfitItems)
+  if (itemsError) return NextResponse.json({ error: itemsError.message }, { status: 500 })
+
+  // Create wear logs (one per item)
+  const wearLogs = selectedItemIds.map((itemId: string) => ({
+    outfit_id: outfit.id,
+    user_id: user.id,
+    worn_on: wornDate,
+  }))
+
+  const { error: logsError } = await supabase.from('wear_logs').insert(wearLogs)
+  if (logsError) return NextResponse.json({ error: logsError.message }, { status: 500 })
+
+  // Fetch and return outfit with items
+  const { data: fullOutfit } = await supabase
+    .from('outfits')
+    .select('*, outfit_items(items(*))')
+    .eq('id', outfit.id)
+    .single()
+
+  const result = {
+    ...fullOutfit,
+    items: fullOutfit?.outfit_items?.map((oi: any) => oi.items).filter(Boolean) || [],
   }
 
-  return NextResponse.json(outfit)
+  return NextResponse.json(result)
 }

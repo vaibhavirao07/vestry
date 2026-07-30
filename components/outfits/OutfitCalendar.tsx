@@ -1,25 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { OutfitStats } from '@/types/database'
-import { AddOutfitSheet } from './AddOutfitSheet'
+import type { OutfitStats, ItemStats, Category } from '@/types/database'
+import { MoodBoardCollage } from './MoodBoardCollage'
+import { DayPickerSheet } from './DayPickerSheet'
 import { OutfitDaySheet } from './OutfitDaySheet'
 
+type OutfitWithItems = OutfitStats & { items: ItemStats[] }
+
 type Props = {
-  initialOutfits: OutfitStats[]
+  initialOutfits: OutfitWithItems[]
+  categories: Category[]
+  allItems: ItemStats[]
 }
 
-const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-export function OutfitCalendar({ initialOutfits }: Props) {
+export function OutfitCalendar({ initialOutfits, categories, allItems }: Props) {
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
-  const [outfits, setOutfits] = useState<OutfitStats[]>(initialOutfits)
+  const [outfits, setOutfits] = useState<OutfitWithItems[]>(initialOutfits)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [addSheetOpen, setAddSheetOpen] = useState(false)
-  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
-  const [selectedOutfit, setSelectedOutfit] = useState<OutfitStats | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [selectedOutfit, setSelectedOutfit] = useState<OutfitWithItems | null>(null)
 
   // Load outfits for current month
   useEffect(() => {
@@ -40,7 +45,9 @@ export function OutfitCalendar({ initialOutfits }: Props) {
   }
 
   function getFirstDayOfMonth(date: Date): number {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+    // Monday = 0, Sunday = 6
+    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+    return day === 0 ? 6 : day - 1
   }
 
   function handlePrevMonth() {
@@ -48,7 +55,6 @@ export function OutfitCalendar({ initialOutfits }: Props) {
   }
 
   function handleNextMonth() {
-    // Only allow navigation to current month or earlier
     const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
     if (nextMonth <= new Date(today.getFullYear(), today.getMonth(), 1)) {
       setCurrentMonth(nextMonth)
@@ -70,21 +76,37 @@ export function OutfitCalendar({ initialOutfits }: Props) {
 
     if (outfit) {
       setSelectedOutfit(outfit)
-      setDetailSheetOpen(true)
+      setDetailOpen(true)
     } else {
       setSelectedDate(clickedDate)
-      setAddSheetOpen(true)
+      setPickerOpen(true)
     }
   }
 
-  function handleOutfitAdded(newOutfit: OutfitStats) {
-    setOutfits([...outfits, newOutfit])
-    setAddSheetOpen(false)
+  async function handleSaveOutfit(itemIds: string[]) {
+    if (!selectedDate) return
+    const res = await fetch('/api/outfits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wornDate: selectedDate.toISOString().split('T')[0],
+        selectedItemIds: itemIds,
+      }),
+    })
+    if (res.ok) {
+      const newOutfit = await res.json()
+      setOutfits([...outfits, newOutfit])
+      setPickerOpen(false)
+    }
+  }
+
+  function handleOutfitUpdated(updated: OutfitWithItems) {
+    setOutfits(outfits.map(o => o.outfit_id === updated.outfit_id ? updated : o))
+    setSelectedOutfit(updated)
   }
 
   function handleOutfitDeleted() {
     setOutfits(outfits.filter(o => o.outfit_id !== selectedOutfit?.outfit_id))
-    setDetailSheetOpen(false)
   }
 
   const daysInMonth = getDaysInMonth(currentMonth)
@@ -94,11 +116,11 @@ export function OutfitCalendar({ initialOutfits }: Props) {
   return (
     <>
       <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="px-4 pt-12 pb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-ink">
+        {/* Month header */}
+        <div className="px-4 pt-4 pb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-ink">
             {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-          </h1>
+          </h2>
           <div className="flex gap-2">
             <button
               onClick={handlePrevMonth}
@@ -123,7 +145,7 @@ export function OutfitCalendar({ initialOutfits }: Props) {
         {/* Calendar grid */}
         <div className="flex-1 overflow-y-auto px-4 pb-8">
           {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 mb-1">
+          <div className="grid grid-cols-7 gap-1 mb-2">
             {DAYS_OF_WEEK.map(day => (
               <div key={day} className="text-xs font-semibold text-ink/40 text-center py-2">
                 {day}
@@ -140,6 +162,7 @@ export function OutfitCalendar({ initialOutfits }: Props) {
 
               const cellDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
               const isFuture = cellDate > today
+              const isToday = cellDate.toDateString() === today.toDateString()
               const outfit = outfits.find(o => {
                 if (!o.worn_date) return false
                 const oDate = new Date(o.worn_date)
@@ -153,20 +176,27 @@ export function OutfitCalendar({ initialOutfits }: Props) {
                   key={day}
                   onClick={() => handleCellClick(day)}
                   disabled={isFuture}
-                  className={`aspect-square rounded-xl border border-ink/8 overflow-hidden relative group transition-all ${
-                    isFuture ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer hover:border-ink/20'
-                  } ${outfit ? 'bg-cover bg-center' : 'bg-white hover:bg-ink/2'}`}
-                  style={outfit?.photo_url ? { backgroundImage: `url(${outfit.photo_url})` } : {}}
+                  className={`aspect-square rounded-lg border-2 overflow-hidden relative group transition-all ${
+                    isFuture ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+                  } ${
+                    isToday ? 'border-accent' : outfit ? 'border-ink/8' : 'border-ink/8 hover:border-ink/20'
+                  } ${
+                    outfit ? 'bg-white' : 'bg-white hover:bg-ink/2'
+                  }`}
                 >
                   {/* Date number */}
-                  <div className="absolute top-1 left-1 text-xs font-semibold text-ink z-10">
+                  <div className="absolute top-1 left-1 text-xs font-semibold text-ink z-20">
                     {day}
                   </div>
 
-                  {/* Empty state: + icon */}
-                  {!outfit && !isFuture && (
+                  {/* Collage or empty state */}
+                  {outfit ? (
+                    <div className="inset-0 w-full h-full">
+                      <MoodBoardCollage items={outfit.items} size="thumbnail" />
+                    </div>
+                  ) : !isFuture && (
                     <div className="absolute inset-0 flex items-center justify-center text-ink/20 group-hover:text-ink/40 transition-colors">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
                     </div>
@@ -178,20 +208,25 @@ export function OutfitCalendar({ initialOutfits }: Props) {
         </div>
       </div>
 
-      {/* Add outfit sheet */}
-      <AddOutfitSheet
-        open={addSheetOpen}
-        onClose={() => setAddSheetOpen(false)}
+      {/* Picker sheet */}
+      <DayPickerSheet
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
         selectedDate={selectedDate}
-        onOutfitAdded={handleOutfitAdded}
+        categories={categories}
+        allItems={allItems}
+        onSave={handleSaveOutfit}
       />
 
-      {/* Outfit detail sheet */}
+      {/* Detail sheet */}
       {selectedOutfit && (
         <OutfitDaySheet
-          open={detailSheetOpen}
-          onClose={() => setDetailSheetOpen(false)}
+          open={detailOpen}
+          onClose={() => setDetailOpen(false)}
           outfit={selectedOutfit}
+          categories={categories}
+          allItems={allItems}
+          onOutfitUpdated={handleOutfitUpdated}
           onOutfitDeleted={handleOutfitDeleted}
         />
       )}
