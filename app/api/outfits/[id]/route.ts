@@ -82,14 +82,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .single()
 
   const result = {
-    ...updated,
+    outfit_id: updated?.id,
+    user_id: updated?.user_id,
+    name: updated?.name,
+    occasion: updated?.occasion,
+    created_at: updated?.created_at,
+    times_worn: 0,
+    photo_url: updated?.photo_url,
+    worn_date: updated?.worn_date,
     items: updated?.outfit_items?.map((oi: any) => oi.items).filter(Boolean) || [],
   }
 
   return NextResponse.json(result)
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const cookieStore = await cookies()
   const supabase = createServerClient(

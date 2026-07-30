@@ -105,7 +105,14 @@ export async function POST(request: Request) {
     .single()
 
   const result = {
-    ...fullOutfit,
+    outfit_id: fullOutfit?.id,
+    user_id: fullOutfit?.user_id,
+    name: fullOutfit?.name,
+    occasion: fullOutfit?.occasion,
+    created_at: fullOutfit?.created_at,
+    times_worn: 0,
+    photo_url: fullOutfit?.photo_url,
+    worn_date: fullOutfit?.worn_date,
     items: fullOutfit?.outfit_items?.map((oi: any) => oi.items).filter(Boolean) || [],
   }
 

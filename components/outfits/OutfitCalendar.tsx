@@ -95,8 +95,15 @@ export function OutfitCalendar({ initialOutfits, categories, allItems }: Props) 
     })
     if (res.ok) {
       const newOutfit = await res.json()
-      setOutfits([...outfits, newOutfit])
+      console.log('Saved outfit:', newOutfit)
+      console.log('Current outfits before:', outfits)
+      const updatedOutfits = [...outfits, newOutfit]
+      console.log('Updated outfits after:', updatedOutfits)
+      setOutfits(updatedOutfits)
       setPickerOpen(false)
+    } else {
+      const error = await res.json()
+      console.error('Failed to save outfit:', error)
     }
   }
 
