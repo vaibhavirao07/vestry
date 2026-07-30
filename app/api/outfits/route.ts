@@ -88,10 +88,10 @@ export async function POST(request: Request) {
   if (itemsError) return NextResponse.json({ error: itemsError.message }, { status: 500 })
 
   // Create wear logs (one per item)
-  const wearLogs = selectedItemIds.map((itemId: string) => ({
+  const wearLogs = selectedItemIds.map((_: string) => ({
     outfit_id: outfit.id,
     user_id: user.id,
-    worn_on: wornDate,
+    worn_at: wornDate,
   }))
 
   const { error: logsError } = await supabase.from('wear_logs').insert(wearLogs)

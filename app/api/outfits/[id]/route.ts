@@ -68,7 +68,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const wearLogs = selectedItemIds.map(() => ({
     outfit_id: id,
     user_id: user.id,
-    worn_on: outfitData?.worn_date || new Date().toISOString().split('T')[0],
+    worn_at: outfitData?.worn_date || new Date().toISOString().split('T')[0],
   }))
 
   const { error: logsError } = await supabase.from('wear_logs').insert(wearLogs)
