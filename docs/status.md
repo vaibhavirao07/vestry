@@ -27,9 +27,19 @@ Phase 2 feature-complete — Smart Shop (9), Platform Comparison (7), Size Intel
 - **Consumer psychology** — impulse-buy guardrails, cost-per-wear projections before purchase (revise with image-based similarity in Phase 3)
 
 ## Must fix before shipping
-0. **Run migrations 002 + 003** — `supabase/migrations/002_profiles.sql` and `003_inspo.sql` must be run in the Supabase SQL editor (003 also creates the `inspo` storage bucket) or /profile, size recommendations and Inspo saving return nothing.
+0. **Run migrations 002, 003, 004** — `supabase/migrations/002_profiles.sql`, `003_inspo.sql`, and `004_outfit_calendar.sql` must be run in the Supabase SQL editor (003 creates the `inspo` storage bucket, 004 adds worn_date + photo_url columns to outfits table)
 1. **Channel3 multi-offer** — most products return only 1 offer from Channel3, so Platform Comparison rarely activates. Check Channel3 docs for a parameter to request multiple retailer offers per product.
 2. **Consumer psychology nudges** — removed after false-positive issues with text-based style similarity. Revisit in Phase 3 with image embeddings.
+
+## Session notes (2026-07-30)
+- Redesigned Outfits tab as personal style calendar with mood board collages (replaced photo upload feature)
+- Built components: `OutfitCalendar` (monthly grid Mon-Sun), `MoodBoardCollage` (reusable renderer), `DayPickerSheet` (category-sorted item picker), `OutfitDaySheet` (full view + inline edit)
+- Collage layout: organic scattered arrangement with random rotations (-8° to +8°), varying sizes (60–120px), overlapping with z-index stagger, +N badge for overflow (max 8 items displayed)
+- Mood board features: edit inline (tap filled cell → modify items → save), delete with confirmation, today's date highlighted with purple border, blocks future dates
+- Auto-generate outfit names from date ("July 23"), create one wear_log per selected item (accurate item stats), support editing existing outfits to change items
+- API routes: GET /api/outfits?year=YYYY&month=MM (fetch month with items), POST (create outfit + wear logs), PATCH (update items + wear logs), DELETE (cascade delete)
+- Fixed: API response format to use outfit_id instead of id, column name worn_at in wear_logs inserts
+- Added debugging console logs to track outfit save/render
 
 ## Session notes (2026-07-23)
 - Fixed auth system: enabled proxy.ts auth gate, fixed Tailwind CSS font variable issue in @theme inline, fixed static assets exclusion from auth redirect

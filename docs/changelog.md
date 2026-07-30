@@ -1,5 +1,25 @@
 # Vestry — Changelog
 
+## [Unreleased] — Mood board calendar for outfits (2026-07-30)
+
+### Added
+- `supabase/migrations/004_outfit_calendar.sql` — add `photo_url` and `worn_date` columns to outfits table, index on (user_id, worn_date) for efficient month queries
+- `components/outfits/MoodBoardCollage.tsx` — reusable collage renderer with organic scattered layout (random rotations -8° to +8°, varying sizes 60–120px, overlapping), overflow badge for 8+ items
+- `components/outfits/DayPickerSheet.tsx` — item picker bottom sheet with category tabs and multi-select grid
+- `components/outfits/OutfitDaySheet.tsx` — full-screen view with collage + items list, inline edit (tap cell → modify items → save), delete with confirmation
+- `app/api/outfits/route.ts` — GET (fetch month's outfits with items), POST (create outfit + auto-generate name "July 23" + insert wear logs), PATCH (edit outfit items)
+- `app/api/outfits/[id]/route.ts` — PATCH (update items + wear logs), DELETE (cascade delete)
+
+### Changed
+- Outfits tab: completely redesigned from traditional list view to monthly calendar grid (Mon-Sun layout, 7 columns)
+- Outfit display: replaced photo upload feature with mood board collages (no AI/vision needed, pure UI)
+- Calendar features: today's date highlighted with accent border, empty cells show faint +, filled cells show mini collage thumbnail, blocks future dates
+- Wear logging: one wear_log entry per selected item (not per outfit), maintains accurate item stats
+
+### Fixed
+- API response format: use `outfit_id` instead of `id` to match component expectations
+- Column name: wear_logs inserts use `worn_at` (not `worn_on`)
+
 ## [Unreleased] — Auth + Closet UX improvements (2026-07-23)
 
 ### Fixed
