@@ -44,6 +44,7 @@ export function ItemDetailSheet({ item, onClose, onEdit, onDelete }: ItemDetailS
   if (!item) return null
 
   function handleDelete() {
+    if (!item) return
     if (confirm(`Delete "${item.name}" from your closet?`)) {
       onDelete(item)
     }
@@ -116,11 +117,6 @@ export function ItemDetailSheet({ item, onClose, onEdit, onDelete }: ItemDetailS
             {item.brand && (
               <p className="text-sm text-ink/50">{item.brand}</p>
             )}
-            <div className="flex gap-2">
-              <span className="text-xs font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">
-                {item.category_name}
-              </span>
-            </div>
           </div>
 
           {/* Stats */}
