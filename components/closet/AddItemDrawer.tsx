@@ -41,7 +41,7 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded, editingI
         colour: editingItem.colour ?? '',
         image_url: editingItem.image_url ?? '',
         price: editingItem.price != null ? String(editingItem.price) : '',
-        category_id: editingItem.category_id,
+        category_id: editingItem.category_id ?? undefined,
         notes: '',
       })
       setStep('form')
