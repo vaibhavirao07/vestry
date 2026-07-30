@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useLogWear } from '@/hooks/useLogWear'
 import type { OutfitStats, ItemStats } from '@/types/database'
 
@@ -11,10 +12,17 @@ type Props = {
 }
 
 export function OutfitDetail({ outfit, items }: Props) {
+  const router = useRouter()
   const { timesWorn, wornToday, isLoading, markAsWorn } = useLogWear(
     outfit.outfit_id,
     outfit.times_worn ?? 0,
   )
+
+  async function handleDelete() {
+    if (!confirm('Delete this outfit?')) return
+    const res = await fetch(`/api/outfits/${outfit.outfit_id}`, { method: 'DELETE' })
+    if (res.ok) router.push('/outfits')
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -78,7 +86,7 @@ export function OutfitDetail({ outfit, items }: Props) {
       </div>
 
       {/* Mark as worn CTA */}
-      <div className="fixed inset-x-0 bottom-0 px-4 pb-8 pt-4 bg-gradient-to-t from-surface via-surface/95 to-transparent">
+      <div className="fixed inset-x-0 bottom-0 px-4 pb-8 pt-4 bg-gradient-to-t from-surface via-surface/95 to-transparent flex flex-col gap-3">
         <button
           onClick={markAsWorn}
           disabled={wornToday || isLoading}
@@ -86,6 +94,13 @@ export function OutfitDetail({ outfit, items }: Props) {
             bg-accent text-white disabled:bg-ink/10 disabled:text-ink/40"
         >
           {wornToday ? 'Worn today ✓' : isLoading ? 'Logging…' : 'Mark as worn'}
+        </button>
+        <button
+          onClick={handleDelete}
+          className="w-full rounded-full py-4 text-sm font-semibold transition-all
+            bg-red-50 border border-red-100 text-red-600 hover:bg-red-100"
+        >
+          Delete outfit
         </button>
       </div>
     </div>
