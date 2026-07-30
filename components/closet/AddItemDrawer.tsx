@@ -100,7 +100,6 @@ export function AddItemDrawer({ open, onClose, categories, onItemAdded, editingI
         versatility_score: editingItem.versatility_score,
         times_worn: editingItem.times_worn,
         cost_per_wear: editingItem.cost_per_wear,
-        category_name: editingItem.category_name,
       }
       onItemAdded(optimistic)
       onClose()
