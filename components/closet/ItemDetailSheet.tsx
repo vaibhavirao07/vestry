@@ -23,6 +23,7 @@ export function ItemDetailSheet({ item, onClose, onEdit, onDelete }: ItemDetailS
     if (!item) return
 
     async function fetchOutfits() {
+      if (!item) return
       setLoading(true)
       try {
         const res = await fetch(`/api/items/${item.item_id}/outfits`)
