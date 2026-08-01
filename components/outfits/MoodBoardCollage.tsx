@@ -10,7 +10,8 @@ type Props = {
 }
 
 export function MoodBoardCollage({ items, size, maxItems = 8 }: Props) {
-  const displayItems = items.slice(0, maxItems)
+  const validItems = items.filter(item => item.item_id || item.name)
+  const displayItems = validItems.slice(0, maxItems)
   const overflow = items.length > maxItems ? items.length - maxItems : 0
 
   if (items.length === 0) {
@@ -34,7 +35,7 @@ export function MoodBoardCollage({ items, size, maxItems = 8 }: Props) {
       {/* Collage container */}
       <div className="absolute inset-0">
         {displayItems.map((item, i) => {
-          const seed = item.item_id.charCodeAt(0) + i
+          const seed = (item.item_id ?? item.name ?? String(i)).charCodeAt(0) + i
           const rotation = ((seed % 16) - 8) // -8 to +8 degrees
           const sizeVariation = size === 'fullscreen'
             ? 60 + (seed % 61) // 60-120px
