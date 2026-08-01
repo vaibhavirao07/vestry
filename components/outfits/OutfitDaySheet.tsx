@@ -88,7 +88,7 @@ export function OutfitDaySheet({
         <div className="flex-1 overflow-y-auto px-4 py-4">
           <div className="flex gap-4 h-full">
             {/* Left: Compact collage */}
-            <div className="shrink-0 w-40 h-40">
+            <div className="shrink-0" style={{ width: '160px', height: '160px' }}>
               <MoodBoardCollage items={outfit.items} size="thumbnail" maxItems={8} />
             </div>
 

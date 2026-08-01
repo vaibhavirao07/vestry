@@ -14,6 +14,8 @@ export function MoodBoardCollage({ items, size, maxItems = 8 }: Props) {
   const displayItems = validItems.slice(0, maxItems)
   const overflow = items.length > maxItems ? items.length - maxItems : 0
 
+  console.log(`MoodBoardCollage [${size}]: received ${items.length} items, valid=${validItems.length}, display=${displayItems.length}, maxItems=${maxItems}`)
+
   if (items.length === 0) {
     return (
       <div className={`bg-accent/5 rounded-lg flex items-center justify-center ${
