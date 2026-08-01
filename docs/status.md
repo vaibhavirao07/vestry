@@ -30,6 +30,19 @@ Phase 2 feature-complete — Smart Shop (9), Platform Comparison (7), Size Intel
 0. **Run migrations 002, 003, 004** — `supabase/migrations/002_profiles.sql`, `003_inspo.sql`, and `004_outfit_calendar.sql` must be run in the Supabase SQL editor (003 creates the `inspo` storage bucket, 004 adds worn_date + photo_url columns to outfits table)
 1. **Channel3 multi-offer** — most products return only 1 offer from Channel3, so Platform Comparison rarely activates. Check Channel3 docs for a parameter to request multiple retailer offers per product.
 2. **Consumer psychology nudges** — removed after false-positive issues with text-based style similarity. Revisit in Phase 3 with image embeddings.
+3. **Calendar verification pending** — three fixes applied (timezone offset, image sizing, one-per-category), debug logging added; need user testing to confirm all issues resolved
+
+## Session notes (2026-07-31)
+- **Calendar fixes applied (pending verification)**:
+  - Timezone offset: outfit saves now use local date string instead of ISO/UTC, preventing date shift to previous day
+  - Image sizing: auto-scale collage items based on count (80/60/45/35px), ensure visibility in calendar cells
+  - One-item-per-category: selecting second item from same category replaces first with toast feedback
+  - Detail sheet: redesigned to two-column layout (160×160px collage left, pieces list right), removes white space, fits on screen
+- **Defensive improvements**: guard for undefined item_id in MoodBoardCollage, tighter offset ranges to contain items within bounds
+- **Debug logging**: comprehensive console logs in DayPickerSheet (selection flow), OutfitCalendar (save tracking), MoodBoardCollage (item count verification)
+- **Build fixed**: deleted unused AddOutfitSheet component and /api/vision route (leftover from old photo-upload flow); removed TypeScript errors
+- **Type errors fixed**: useSaveOutfit now returns photo_url and worn_date fields required by OutfitStats type
+- **Workflow established**: local npm run build verification before pushing (all commits this session passed type-check)
 
 ## Session notes (2026-07-30)
 - Redesigned Outfits tab as personal style calendar with mood board collages (replaced photo upload feature)

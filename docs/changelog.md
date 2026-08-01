@@ -1,5 +1,26 @@
 # Vestry — Changelog
 
+## [Unreleased] — Calendar refinements & build fixes (2026-07-31)
+
+### Fixed
+- Outfit calendar: timezone offset causing saved outfits to appear on wrong date (use local date string instead of ISO/UTC)
+- Outfit calendar: collage images too small in calendar cells — increased thumbnail sizes (50-90px, auto-scale based on item count)
+- Outfit calendar: auto-size items based on count (80px for 1-2 items, 60px for 3-4, 45px for 5-6, 35px for 7+)
+- Outfit detail sheet: redesigned to two-column layout (compact 160×160px collage on left, pieces list on right) to eliminate white space
+- Outfit detail sheet: collage now properly sized at 160×160px with items overlapping to fill square
+- MoodBoardCollage: defensive guard for undefined `item_id` with fallback chain (name → index)
+- useSaveOutfit: missing `photo_url` and `worn_date` fields in return object causing type error
+- Build: deleted unused `AddOutfitSheet.tsx` and `/api/vision` route (leftover from old photo-upload flow)
+
+### Changed
+- DayPickerSheet: one-item-per-category selection (selecting new item from same category replaces previous, with toast feedback)
+- MoodBoardCollage: tighter offset ranges to keep items contained within cell bounds (±25% in thumbnail, ±40% in fullscreen)
+- OutfitDaySheet: compact 10×10px item thumbnails in pieces list (vs previous 12×12px)
+- Collage sizing: responsive to item count for optimal visibility across calendar cells and detail view
+
+### Added
+- Comprehensive debug logging in DayPickerSheet (selection/replacement tracking), OutfitCalendar (save flow), MoodBoardCollage (item count verification)
+
 ## [Unreleased] — Mood board calendar for outfits (2026-07-30)
 
 ### Added
