@@ -29,6 +29,7 @@ export function DayPickerSheet({
   const [activeCategory, setActiveCategory] = useState<string | null>(
     categories[0]?.id ?? null
   )
+  const [toast, setToast] = useState<string | null>(null)
 
   const dateStr = selectedDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
@@ -40,9 +41,27 @@ export function DayPickerSheet({
 
   function toggleItem(itemId: string) {
     const newSet = new Set(selectedIds)
+    const clickedItem = allItems.find(i => i.item_id === itemId)
+    if (!clickedItem) return
+
     if (newSet.has(itemId)) {
       newSet.delete(itemId)
     } else {
+      // Find any existing item from the same category
+      const existingFromCategory = Array.from(newSet).find(id => {
+        const item = allItems.find(i => i.item_id === id)
+        return item?.category_id === clickedItem.category_id
+      })
+
+      if (existingFromCategory) {
+        // Replace the previous item with the new one
+        newSet.delete(existingFromCategory)
+        const prevItemName = allItems.find(i => i.item_id === existingFromCategory)?.name || 'item'
+        const categoryName = categories.find(c => c.id === clickedItem.category_id)?.name || 'category'
+        setToast(`Replaced previous ${categoryName} selection`)
+        setTimeout(() => setToast(null), 2000)
+      }
+
       newSet.add(itemId)
     }
     setSelectedIds(newSet)
@@ -94,6 +113,13 @@ export function DayPickerSheet({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
+          {/* Toast notification */}
+          {toast && (
+            <div className="mb-3 p-3 rounded-lg bg-accent/10 border border-accent/30 text-sm text-accent">
+              {toast}
+            </div>
+          )}
+
           {/* Category tabs */}
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
             {categories.map(cat => (

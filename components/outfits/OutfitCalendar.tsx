@@ -85,11 +85,12 @@ export function OutfitCalendar({ initialOutfits, categories, allItems }: Props) 
 
   async function handleSaveOutfit(itemIds: string[]) {
     if (!selectedDate) return
+    const wornDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
     const res = await fetch('/api/outfits', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        wornDate: selectedDate.toISOString().split('T')[0],
+        wornDate,
         selectedItemIds: itemIds,
       }),
     })

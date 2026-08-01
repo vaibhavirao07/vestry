@@ -39,7 +39,7 @@ export function MoodBoardCollage({ items, size, maxItems = 8 }: Props) {
           const rotation = ((seed % 16) - 8) // -8 to +8 degrees
           const sizeVariation = size === 'fullscreen'
             ? 60 + (seed % 61) // 60-120px
-            : 20 + (seed % 21) // 20-40px
+            : 50 + (seed % 41) // 50-90px
           const xOffset = (seed % 60) - 30 // -30 to +30%
           const yOffset = ((seed + 7) % 60) - 30 // -30 to +30%
           const zIndex = i + 1
