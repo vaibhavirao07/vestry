@@ -61,6 +61,8 @@ export function useSaveOutfit() {
       user_id: outfit.user_id,
       name: outfit.name,
       occasion: outfit.occasion,
+      photo_url: outfit.photo_url ?? null,
+      worn_date: outfit.worn_date ?? null,
       created_at: outfit.created_at,
       times_worn: 0,
     }
