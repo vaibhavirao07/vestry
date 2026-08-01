@@ -65,7 +65,7 @@ export function OutfitDaySheet({
 
       {/* Sheet */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col bg-surface rounded-t-3xl transition-transform duration-300 ease-out max-h-[90vh] ${
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col bg-surface rounded-t-3xl transition-transform duration-300 ease-out h-[90vh] ${
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -84,39 +84,41 @@ export function OutfitDaySheet({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 pb-20">
-          {/* Collage */}
-          <div className="mb-6">
-            <MoodBoardCollage items={outfit.items} size="fullscreen" />
-          </div>
+        {/* Content - Two columns */}
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="flex gap-4 h-full">
+            {/* Left: Compact collage */}
+            <div className="shrink-0 w-40 h-40">
+              <MoodBoardCollage items={outfit.items} size="thumbnail" maxItems={8} />
+            </div>
 
-          {/* Items list */}
-          <div>
-            <h3 className="text-sm font-semibold text-ink mb-3">Pieces ({outfit.items.length})</h3>
-            <div className="flex flex-col gap-2">
-              {outfit.items.map(item => (
-                <div key={item.item_id} className="bg-white rounded-lg p-3 border border-ink/8 flex gap-3">
-                  {item.image_url && (
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-ink/5 shrink-0">
-                      <Image
-                        src={item.image_url}
-                        alt={item.name}
-                        width={48}
-                        height={48}
-                        className="w-full h-full object-cover"
-                        unoptimized
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-ink">{item.name}</p>
-                    {item.brand && (
-                      <p className="text-xs text-ink/50">{item.brand}</p>
+            {/* Right: Pieces list */}
+            <div className="flex-1 overflow-y-auto">
+              <h3 className="text-sm font-semibold text-ink mb-3">Pieces ({outfit.items.length})</h3>
+              <div className="flex flex-col gap-2">
+                {outfit.items.map(item => (
+                  <div key={item.item_id} className="bg-white rounded-lg p-3 border border-ink/8 flex gap-3">
+                    {item.image_url && (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-ink/5 shrink-0">
+                        <Image
+                          src={item.image_url}
+                          alt={item.name}
+                          width={40}
+                          height={40}
+                          className="w-full h-full object-cover"
+                          unoptimized
+                        />
+                      </div>
                     )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">{item.name}</p>
+                      {item.brand && (
+                        <p className="text-xs text-ink/50 truncate">{item.brand}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>

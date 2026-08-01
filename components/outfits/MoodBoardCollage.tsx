@@ -37,11 +37,23 @@ export function MoodBoardCollage({ items, size, maxItems = 8 }: Props) {
         {displayItems.map((item, i) => {
           const seed = (item.item_id ?? item.name ?? String(i)).charCodeAt(0) + i
           const rotation = ((seed % 16) - 8) // -8 to +8 degrees
+
+          // Calculate base size based on item count (auto-sizing for visibility)
+          let baseSize: number
+          if (displayItems.length <= 2) baseSize = 80
+          else if (displayItems.length <= 4) baseSize = 60
+          else if (displayItems.length <= 6) baseSize = 45
+          else baseSize = 35
+
+          // Apply size variation only in fullscreen mode
           const sizeVariation = size === 'fullscreen'
-            ? 60 + (seed % 61) // 60-120px
-            : 50 + (seed % 41) // 50-90px
-          const xOffset = (seed % 60) - 30 // -30 to +30%
-          const yOffset = ((seed + 7) % 60) - 30 // -30 to +30%
+            ? baseSize + (seed % 20) // ±0-20px variation in fullscreen
+            : baseSize // fixed size in thumbnail
+
+          // Tighter offset ranges to keep items contained within bounds
+          const offsetRange = size === 'fullscreen' ? 40 : 25
+          const xOffset = (seed % (offsetRange * 2)) - offsetRange
+          const yOffset = ((seed + 7) % (offsetRange * 2)) - offsetRange
           const zIndex = i + 1
 
           return (
