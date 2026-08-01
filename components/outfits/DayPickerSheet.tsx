@@ -46,6 +46,7 @@ export function DayPickerSheet({
 
     if (newSet.has(itemId)) {
       newSet.delete(itemId)
+      console.log(`Deselected ${clickedItem.name}, total now: ${newSet.size}`)
     } else {
       // Find any existing item from the same category
       const existingFromCategory = Array.from(newSet).find(id => {
@@ -58,12 +59,16 @@ export function DayPickerSheet({
         newSet.delete(existingFromCategory)
         const prevItemName = allItems.find(i => i.item_id === existingFromCategory)?.name || 'item'
         const categoryName = categories.find(c => c.id === clickedItem.category_id)?.name || 'category'
+        console.log(`Replaced ${prevItemName} with ${clickedItem.name} in ${categoryName}`)
         setToast(`Replaced previous ${categoryName} selection`)
         setTimeout(() => setToast(null), 2000)
+      } else {
+        console.log(`Selected ${clickedItem.name} in new category`)
       }
 
       newSet.add(itemId)
     }
+    console.log(`Current selection: ${newSet.size} items - ${Array.from(newSet).join(', ')}`)
     setSelectedIds(newSet)
   }
 
